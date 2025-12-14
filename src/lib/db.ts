@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 
-export interface Phrase {
+export interface SearchQuery {
   id: number;
   text: string;
   popularity?: number;
@@ -9,7 +9,7 @@ export interface Phrase {
 
 export interface AppState {
   id?: number; // Primary key (we'll use a single record with id=1)
-  phrases: Phrase[];
+  searchQueries: SearchQuery[];
   selectedCategory: string;
   selectedGameCategory: string;
   metaName: string;

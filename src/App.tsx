@@ -53,7 +53,7 @@ import {
 import { cn } from '@/lib/utils';
 import { db, type AppState } from '@/lib/db';
 
-interface Phrase {
+interface SearchQuery {
   id: number;
   text: string;
   popularity?: number; // 0-100
@@ -132,7 +132,7 @@ const GAME_CATEGORIES = [
   'Word',
 ];
 
-function PhraseItem({ phrase, onEdit, onDelete }: { phrase: Phrase; onEdit: () => void; onDelete: () => void }) {
+function SearchQueryItem({ searchQuery, onEdit, onDelete }: { searchQuery: SearchQuery; onEdit: () => void; onDelete: () => void }) {
   const {
     attributes,
     isDragging,
@@ -140,7 +140,7 @@ function PhraseItem({ phrase, onEdit, onDelete }: { phrase: Phrase; onEdit: () =
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: phrase.id });
+  } = useSortable({ id: searchQuery.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -164,21 +164,21 @@ function PhraseItem({ phrase, onEdit, onDelete }: { phrase: Phrase; onEdit: () =
         </button>
 
         <div className="font-medium">
-          {phrase.text}
+          {searchQuery.text}
         </div>
       </div>
 
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-        {phrase.popularity !== undefined && (
+        {searchQuery.popularity !== undefined && (
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4" />
-            <span>{phrase.popularity}</span>
+            <span>{searchQuery.popularity}</span>
           </div>
         )}
-        {phrase.competitiveness !== undefined && (
+        {searchQuery.competitiveness !== undefined && (
           <div className="flex items-center gap-1">
             <Shield className="h-4 w-4" />
-            <span>{phrase.competitiveness}</span>
+            <span>{searchQuery.competitiveness}</span>
           </div>
         )}
         <button
@@ -200,7 +200,7 @@ function PhraseItem({ phrase, onEdit, onDelete }: { phrase: Phrase; onEdit: () =
           <Trash2 className="h-4 w-4" />
         </button>
         <a
-          href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(phrase.text)}`}
+          href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(searchQuery.text)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-muted-foreground hover:text-foreground"
@@ -229,35 +229,35 @@ interface MetaAnalysis {
   wastedCharCount: number;
 }
 
-function EditPhraseDialog({
-  phrase,
+function EditSearchQueryDialog({
+  searchQuery,
   open,
   onOpenChange,
   onSave
 }: {
-  phrase: Phrase | null;
+  searchQuery: SearchQuery | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (phrase: Phrase) => void;
+  onSave: (searchQuery: SearchQuery) => void;
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [text, setText] = useState('');
   const [popularity, setPopularity] = useState('');
   const [competitiveness, setCompetitiveness] = useState('');
 
-  // Update form when phrase changes
+  // Update form when searchQuery changes
   React.useEffect(() => {
-    if (phrase) {
-      setText(phrase.text);
-      setPopularity(phrase.popularity?.toString() || '');
-      setCompetitiveness(phrase.competitiveness?.toString() || '');
+    if (searchQuery) {
+      setText(searchQuery.text);
+      setPopularity(searchQuery.popularity?.toString() || '');
+      setCompetitiveness(searchQuery.competitiveness?.toString() || '');
     }
-  }, [phrase]);
+  }, [searchQuery]);
 
   const handleSave = () => {
-    if (!phrase || !text.trim()) return;
+    if (!searchQuery || !text.trim()) return;
 
-    // Normalize phrase: lowercase, trim, and remove extra whitespace
+    // Normalize searchQuery: lowercase, trim, and remove extra whitespace
     const normalizedText = text
       .trim()
       .toLowerCase()
@@ -274,7 +274,7 @@ function EditPhraseDialog({
       : undefined;
 
     onSave({
-      ...phrase,
+      ...searchQuery,
       text: normalizedText,
       popularity: popularityValue,
       competitiveness: competitivenessValue,
@@ -282,9 +282,9 @@ function EditPhraseDialog({
     onOpenChange(false);
   };
 
-  if (!phrase) return null;
+  if (!searchQuery) return null;
 
-  const PhraseForm = ({ className }: { className?: string }) => (
+  const SearchQueryForm = ({ className }: { className?: string }) => (
     <form
       className={cn("grid items-start gap-4", className)}
       onSubmit={(e) => {
@@ -293,18 +293,18 @@ function EditPhraseDialog({
       }}
     >
       <div className="grid gap-2">
-        <Label htmlFor="edit-phrase-text">Phrase Text</Label>
+        <Label htmlFor="edit-search-query-text">Search Query Text</Label>
         <Input
-          id="edit-phrase-text"
+          id="edit-search-query-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Phrase text"
+          placeholder="Search query text"
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="edit-phrase-popularity">Popularity (0-100)</Label>
+        <Label htmlFor="edit-search-query-popularity">Popularity (0-100)</Label>
         <Input
-          id="edit-phrase-popularity"
+          id="edit-search-query-popularity"
           type="number"
           min="0"
           max="100"
@@ -314,9 +314,9 @@ function EditPhraseDialog({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="edit-phrase-competitiveness">Competitiveness (0-100)</Label>
+        <Label htmlFor="edit-search-query-competitiveness">Competitiveness (0-100)</Label>
         <Input
-          id="edit-phrase-competitiveness"
+          id="edit-search-query-competitiveness"
           type="number"
           min="0"
           max="100"
@@ -334,12 +334,12 @@ function EditPhraseDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit phrase</DialogTitle>
+            <DialogTitle>Edit search query</DialogTitle>
             <DialogDescription>
-              Make changes to your phrase here. Click save when you're done.
+              Make changes to your search query here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
-          <PhraseForm />
+          <SearchQueryForm />
         </DialogContent>
       </Dialog>
     );
@@ -349,12 +349,12 @@ function EditPhraseDialog({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader className="text-left">
-          <DrawerTitle>Edit phrase</DrawerTitle>
+          <DrawerTitle>Edit search query</DrawerTitle>
           <DrawerDescription>
-            Make changes to your phrase here. Click save when you're done.
+            Make changes to your search query here. Click save when you're done.
           </DrawerDescription>
         </DrawerHeader>
-        <PhraseForm className="px-4" />
+        <SearchQueryForm className="px-4" />
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
@@ -414,16 +414,16 @@ function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] 
 }
 
 function App() {
-  const [phrases, setPhrases] = useState<Phrase[]>([]);
-  const [phraseText, setPhraseText] = useState('');
-  const [phrasePopularity, setPhrasePopularity] = useState('');
-  const [phraseCompetitiveness, setPhraseCompetitiveness] = useState('');
+  const [searchQueries, setSearchQueries] = useState<SearchQuery[]>([]);
+  const [searchQueryText, setSearchQueryText] = useState('');
+  const [searchQueryPopularity, setSearchQueryPopularity] = useState('');
+  const [searchQueryCompetitiveness, setSearchQueryCompetitiveness] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedGameCategory, setSelectedGameCategory] = useState<string>('');
   const [metaName, setMetaName] = useState<string>('');
   const [metaSubtitle, setMetaSubtitle] = useState<string>('');
   const [metaKeywords, setMetaKeywords] = useState<string>('');
-  const [editingPhrase, setEditingPhrase] = useState<Phrase | null>(null);
+  const [editingSearchQuery, setEditingSearchQuery] = useState<SearchQuery | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -440,7 +440,7 @@ function App() {
       try {
         const savedState = await db.appState.get(1);
         if (savedState) {
-          setPhrases(savedState.phrases || []);
+          setSearchQueries(savedState.searchQueries || []);
           setSelectedCategory(savedState.selectedCategory || '');
           setSelectedGameCategory(savedState.selectedGameCategory || '');
           setMetaName(savedState.metaName || '');
@@ -465,7 +465,7 @@ function App() {
       try {
         const state: AppState = {
           id: 1,
-          phrases,
+          searchQueries,
           selectedCategory,
           selectedGameCategory,
           metaName,
@@ -479,15 +479,15 @@ function App() {
     };
 
     saveState();
-  }, [phrases, selectedCategory, selectedGameCategory, metaName, metaSubtitle, metaKeywords, isLoading]);
+  }, [searchQueries, selectedCategory, selectedGameCategory, metaName, metaSubtitle, metaKeywords, isLoading]);
 
-  // Extract unique words from all phrases (excluding stop words) and convert to singular
+  // Extract unique words from all searchQueries (excluding stop words) and convert to singular
   const keywords = useMemo(() => {
     const allWords: string[] = [];
 
-    // Extract words from phrases
-    phrases.forEach((phrase) => {
-      phrase.text
+    // Extract words from searchQueries
+    searchQueries.forEach((searchQuery) => {
+      searchQuery.text
         .trim()
         .replace(/[^a-zA-Z0-9]/g, ' ')
         .split(/\s+/)
@@ -500,7 +500,7 @@ function App() {
 
     // Remove duplicates by converting to a Set and then back to an array
     return Array.from(new Set(allWords));
-  }, [phrases]);
+  }, [searchQueries]);
 
   // Convert keywords to Set for faster lookup
   const keywordsSet = useMemo(() => new Set(keywords), [keywords]);
@@ -965,20 +965,20 @@ function App() {
     };
   }, [metaName, metaSubtitle, metaKeywords, keywordsSet, duplicateKeywords]);
 
-  // Generate unused phrase combinations using pluralization
-  const unusedPhrases = useMemo(() => {
-    if (phrases.length === 0) { return []; }
+  // Generate unused searchQuery combinations using pluralization
+  const unusedSearchQueries = useMemo(() => {
+    if (searchQueries.length === 0) { return []; }
 
-    // Get existing phrase texts (already normalized: lowercase, trimmed, single spaces)
-    const existingPhrases = new Set(
-      phrases.map(phrase => phrase.text),
+    // Get existing searchQuery texts (already normalized: lowercase, trimmed, single spaces)
+    const existingSearchQueries = new Set(
+      searchQueries.map(searchQuery => searchQuery.text),
     );
 
     const combinations: string[] = [];
 
-    // Go through each phrase and generate plural variations
-    for (const phrase of phrases) {
-      const words = phrase.text
+    // Go through each searchQuery and generate plural variations
+    for (const searchQuery of searchQueries) {
+      const words = searchQuery.text
         .split(/\s+/)
         .map(word => word.trim())
         .filter(word => word.length > 0);
@@ -1008,50 +1008,50 @@ function App() {
             variation.push(words[j]);
           }
         }
-        const newPhrase = variation.join(' ');
-        combinations.push(newPhrase);
+        const newSearchQuery = variation.join(' ');
+        combinations.push(newSearchQuery);
       }
     }
 
-    // Filter out combinations that already exist in phrases
+    // Filter out combinations that already exist in searchQueries
     // Normalize combinations: lowercase, trim, and remove extra whitespace
     const unused = combinations
       .map(combo => combo.trim().toLowerCase().replace(/\s+/g, ' '))
-      .filter(combo => !existingPhrases.has(combo));
+      .filter(combo => !existingSearchQueries.has(combo));
 
     // Remove duplicates and limit to 100 results
     const uniqueUnused = Array.from(new Set(unused));
     return uniqueUnused.slice(0, 100);
-  }, [phrases]);
+  }, [searchQueries]);
 
-  const handleAddPhrase = () => {
-    if (phraseText.trim()) {
-      // Normalize phrase: lowercase, trim, and remove extra whitespace
-      const normalizedText = phraseText
+  const handleAddSearchQuery = () => {
+    if (searchQueryText.trim()) {
+      // Normalize searchQuery: lowercase, trim, and remove extra whitespace
+      const normalizedText = searchQueryText
         .trim()
         .toLowerCase()
         .replace(/\s+/g, ' ');
 
       // Parse popularity (0-100)
-      const popularity = phrasePopularity.trim()
-        ? Math.max(0, Math.min(100, parseInt(phrasePopularity.trim(), 10) || 0))
+      const popularity = searchQueryPopularity.trim()
+        ? Math.max(0, Math.min(100, parseInt(searchQueryPopularity.trim(), 10) || 0))
         : undefined;
 
       // Parse competitiveness (0-100)
-      const competitiveness = phraseCompetitiveness.trim()
-        ? Math.max(0, Math.min(100, parseInt(phraseCompetitiveness.trim(), 10) || 0))
+      const competitiveness = searchQueryCompetitiveness.trim()
+        ? Math.max(0, Math.min(100, parseInt(searchQueryCompetitiveness.trim(), 10) || 0))
         : undefined;
 
-      const newPhrase: Phrase = {
+      const newSearchQuery: SearchQuery = {
         id: Date.now(),
         text: normalizedText,
         popularity,
         competitiveness,
       };
-      setPhrases([...phrases, newPhrase]);
-      setPhraseText('');
-      setPhrasePopularity('');
-      setPhraseCompetitiveness('');
+      setSearchQueries([...searchQueries, newSearchQuery]);
+      setSearchQueryText('');
+      setSearchQueryPopularity('');
+      setSearchQueryCompetitiveness('');
     }
   };
 
@@ -1059,7 +1059,7 @@ function App() {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      setPhrases((items) => {
+      setSearchQueries((items) => {
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
@@ -1074,20 +1074,20 @@ function App() {
     }
   };
 
-  const handleEditPhrase = (phrase: Phrase) => {
-    setEditingPhrase(phrase);
+  const handleEditSearchQuery = (searchQuery: SearchQuery) => {
+    setEditingSearchQuery(searchQuery);
     setIsEditDialogOpen(true);
   };
 
-  const handleSavePhrase = (updatedPhrase: Phrase) => {
-    setPhrases((prevPhrases) =>
-      prevPhrases.map((p) => (p.id === updatedPhrase.id ? updatedPhrase : p))
+  const handleSaveSearchQuery = (updatedSearchQuery: SearchQuery) => {
+    setSearchQueries((prevSearchQueries) =>
+      prevSearchQueries.map((p) => (p.id === updatedSearchQuery.id ? updatedSearchQuery : p))
     );
-    setEditingPhrase(null);
+    setEditingSearchQuery(null);
   };
 
-  const handleDeletePhrase = (phraseId: number) => {
-    setPhrases((prevPhrases) => prevPhrases.filter((p) => p.id !== phraseId));
+  const handleDeleteSearchQuery = (searchQueryId: number) => {
+    setSearchQueries((prevSearchQueries) => prevSearchQueries.filter((p) => p.id !== searchQueryId));
   };
 
   return (
@@ -1099,8 +1099,12 @@ function App() {
 
         <div className="w-full h-20 flex items-center px-4">
           <h1>
-            Page Title
+            Worksheet
           </h1>
+
+          <p>
+            This worksheet is intended to be used in conjunction with Appfigures while doing keyword research. This <a href="https://appfigures.com/resources/guides/which-keywords-to-optimize-for" target="_blank">Appfigures blog post</a> outlines the general approach.
+          </p>
         </div>
 
         <div className="w-full flex gap-4 px-4">
@@ -1291,49 +1295,49 @@ function App() {
               )}
             </div>
 
-            {/* Phrases */}
+            {/* Search Queries */}
             <div>
               <h2>
-                Phrases
+                Search Queries
               </h2>
 
-              {/* Phrases Input */}
+              {/* Search Queries Input */}
               <div className="space-y-2">
                 <Input
-                  id="addPhraseText"
-                  onChange={e => setPhraseText(e.target.value)}
-                  placeholder="Phrase text"
-                  value={phraseText}
+                  id="addSearchQueryText"
+                  onChange={e => setSearchQueryText(e.target.value)}
+                  placeholder="Search query text"
+                  value={searchQueryText}
                 />
 
                 <div className="flex gap-2">
                   <Input
-                    id="addPhrasePopularity"
+                    id="addSearchQueryPopularity"
                     type="number"
                     min="0"
                     max="100"
-                    onChange={e => setPhrasePopularity(e.target.value)}
+                    onChange={e => setSearchQueryPopularity(e.target.value)}
                     placeholder="Popularity (0-100)"
-                    value={phrasePopularity}
+                    value={searchQueryPopularity}
                   />
 
                   <Input
-                    id="addPhraseCompetitiveness"
+                    id="addSearchQueryCompetitiveness"
                     type="number"
                     min="0"
                     max="100"
-                    onChange={e => setPhraseCompetitiveness(e.target.value)}
+                    onChange={e => setSearchQueryCompetitiveness(e.target.value)}
                     placeholder="Competitiveness (0-100)"
-                    value={phraseCompetitiveness}
+                    value={searchQueryCompetitiveness}
                   />
                 </div>
 
-                <Button id="addPhraseButton" onClick={handleAddPhrase}>
+                <Button id="addSearchQueryButton" onClick={handleAddSearchQuery}>
                   Add
                 </Button>
               </div>
 
-              {/* Phrases items */}
+              {/* Search Queries items */}
               <div className="mt-4 space-y-2">
                 <DndContext
                   collisionDetection={closestCenter}
@@ -1341,23 +1345,23 @@ function App() {
                   sensors={sensors}
                 >
                   <SortableContext
-                    items={phrases.map(p => p.id)}
+                    items={searchQueries.map(p => p.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    {phrases.map(phrase => (
-                      <PhraseItem
-                        key={phrase.id}
-                        phrase={phrase}
-                        onEdit={() => handleEditPhrase(phrase)}
-                        onDelete={() => handleDeletePhrase(phrase.id)}
+                    {searchQueries.map(searchQuery => (
+                      <SearchQueryItem
+                        key={searchQuery.id}
+                        searchQuery={searchQuery}
+                        onEdit={() => handleEditSearchQuery(searchQuery)}
+                        onDelete={() => handleDeleteSearchQuery(searchQuery.id)}
                       />
                     ))}
                   </SortableContext>
                 </DndContext>
 
-                {phrases.length === 0 && (
+                {searchQueries.length === 0 && (
                   <p className="text-sm text-muted-foreground">
-                    Add a phrase to get started
+                    Add a search query to get started
                   </p>
                 )}
               </div>
@@ -1488,14 +1492,14 @@ function App() {
             {/* Unused */}
             <div>
               <h2>
-                Unused Phrases
+                Unused Search Queries
               </h2>
             </div>
 
             {/* Items */}
             <div className="flex flex-wrap gap-2">
-              {unusedPhrases.length > 0 ? (
-                unusedPhrases.map((phrase, index) => (
+              {unusedSearchQueries.length > 0 ? (
+                unusedSearchQueries.map((searchQuery, index) => (
                   <Badge
                     key={index}
                     variant="outline"
@@ -1503,19 +1507,19 @@ function App() {
                     asChild
                   >
                     <a
-                      href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(phrase)}`}
+                      href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(searchQuery)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1"
                     >
-                      {phrase}
+                      {searchQuery}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   </Badge>
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No unused phrases
+                  No unused search queries
                 </p>
               )}
             </div>
@@ -1523,11 +1527,11 @@ function App() {
         </div>
       </div>
 
-      <EditPhraseDialog
-        phrase={editingPhrase}
+      <EditSearchQueryDialog
+        searchQuery={editingSearchQuery}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        onSave={handleSavePhrase}
+        onSave={handleSaveSearchQuery}
       />
     </>
   );
