@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GripVertical, AlertTriangle, Star, Shield, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, AlertTriangle, Star, Shield, ExternalLink, Pencil, Trash2, Github } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
@@ -204,7 +204,7 @@ function SearchQueryItem({ searchQuery, onEdit, onDelete }: { searchQuery: Searc
           target="_blank"
           rel="noopener noreferrer"
           className="text-muted-foreground hover:text-foreground"
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           <ExternalLink className="h-4 w-4" />
         </a>
@@ -233,14 +233,14 @@ function EditSearchQueryDialog({
   searchQuery,
   open,
   onOpenChange,
-  onSave
+  onSave,
 }: {
   searchQuery: SearchQuery | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (searchQuery: SearchQuery) => void;
 }) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const [text, setText] = useState('');
   const [popularity, setPopularity] = useState('');
   const [competitiveness, setCompetitiveness] = useState('');
@@ -255,7 +255,7 @@ function EditSearchQueryDialog({
   }, [searchQuery]);
 
   const handleSave = () => {
-    if (!searchQuery || !text.trim()) return;
+    if (!searchQuery || !text.trim()) { return; }
 
     // Normalize searchQuery: lowercase, trim, and remove extra whitespace
     const normalizedText = text
@@ -282,11 +282,11 @@ function EditSearchQueryDialog({
     onOpenChange(false);
   };
 
-  if (!searchQuery) return null;
+  if (!searchQuery) { return null; }
 
   const SearchQueryForm = ({ className }: { className?: string }) => (
     <form
-      className={cn("grid items-start gap-4", className)}
+      className={cn('grid items-start gap-4', className)}
       onSubmit={(e) => {
         e.preventDefault();
         handleSave();
@@ -297,7 +297,7 @@ function EditSearchQueryDialog({
         <Input
           id="edit-search-query-text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={e => setText(e.target.value)}
           placeholder="Search query text"
         />
       </div>
@@ -309,7 +309,7 @@ function EditSearchQueryDialog({
           min="0"
           max="100"
           value={popularity}
-          onChange={(e) => setPopularity(e.target.value)}
+          onChange={e => setPopularity(e.target.value)}
           placeholder="Popularity (0-100)"
         />
       </div>
@@ -321,7 +321,7 @@ function EditSearchQueryDialog({
           min="0"
           max="100"
           value={competitiveness}
-          onChange={(e) => setCompetitiveness(e.target.value)}
+          onChange={e => setCompetitiveness(e.target.value)}
           placeholder="Competitiveness (0-100)"
         />
       </div>
@@ -448,7 +448,7 @@ function App() {
           setMetaKeywords(savedState.metaKeywords || '');
         }
       } catch (error) {
-        console.error('Failed to load state from database:', error);
+        console.error('Failed to load state from database:', error); // eslint-disable-line no-console
       } finally {
         setIsLoading(false);
       }
@@ -459,7 +459,7 @@ function App() {
 
   // Persist state to Dexie whenever it changes
   useEffect(() => {
-    if (isLoading) return; // Don't save during initial load
+    if (isLoading) { return; } // Don't save during initial load
 
     const saveState = async () => {
       try {
@@ -474,7 +474,7 @@ function App() {
         };
         await db.appState.put(state, 1);
       } catch (error) {
-        console.error('Failed to save state to database:', error);
+        console.error('Failed to save state to database:', error); // eslint-disable-line no-console
       }
     };
 
@@ -1080,21 +1080,104 @@ function App() {
   };
 
   const handleSaveSearchQuery = (updatedSearchQuery: SearchQuery) => {
-    setSearchQueries((prevSearchQueries) =>
-      prevSearchQueries.map((p) => (p.id === updatedSearchQuery.id ? updatedSearchQuery : p))
+    setSearchQueries(prevSearchQueries =>
+      prevSearchQueries.map(p => (p.id === updatedSearchQuery.id ? updatedSearchQuery : p)),
     );
     setEditingSearchQuery(null);
   };
 
   const handleDeleteSearchQuery = (searchQueryId: number) => {
-    setSearchQueries((prevSearchQueries) => prevSearchQueries.filter((p) => p.id !== searchQueryId));
+    setSearchQueries(prevSearchQueries => prevSearchQueries.filter(p => p.id !== searchQueryId));
+  };
+
+  const handleReset = async () => {
+    setSearchQueries([]);
+    setSelectedCategory('');
+    setSelectedGameCategory('');
+    setMetaName('');
+    setMetaSubtitle('');
+    setMetaKeywords('');
+  };
+
+  const handleUseDemoData = async () => {
+    const demoSearchQueries: SearchQuery[] = [
+      {
+        id: Date.now() + 1,
+        text: 'weather app',
+        popularity: 95,
+        competitiveness: 85,
+      },
+      {
+        id: Date.now() + 2,
+        text: 'weather forecast',
+        popularity: 88,
+        competitiveness: 75,
+      },
+      {
+        id: Date.now() + 3,
+        text: 'weather radar',
+        popularity: 72,
+        competitiveness: 60,
+      },
+      {
+        id: Date.now() + 4,
+        text: 'hourly weather',
+        popularity: 65,
+        competitiveness: 50,
+      },
+      {
+        id: Date.now() + 5,
+        text: 'local weather',
+        popularity: 80,
+        competitiveness: 70,
+      },
+      {
+        id: Date.now() + 6,
+        text: 'weather widget',
+        popularity: 55,
+        competitiveness: 45,
+      },
+    ];
+
+    setSearchQueries(demoSearchQueries);
+    setSelectedCategory('Weather');
+    setSelectedGameCategory('');
+    setMetaName('WeatherPro');
+    setMetaSubtitle('Forecast & Radar');
+    setMetaKeywords('weather,forecast,radar,hourly,local,temperature,conditions');
   };
 
   return (
     <>
       <div className="w-full min-h-screen bg-background">
-        <header className="w-full h-16">
-          ASO Keyword Worksheet
+        <header className="w-full h-16 flex items-center justify-between px-4 border-b">
+          <div className="font-semibold text-lg">
+            ASO Keyword Worksheet
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+            >
+              Reset
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUseDemoData}
+            >
+              Use Demo Data
+            </Button>
+            <a
+              href="https://github.com/rbenj/rapidprotokit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Github className="h-5 w-5" />
+            </a>
+          </div>
         </header>
 
         <div className="w-full h-20 flex items-center px-4">
@@ -1103,7 +1186,11 @@ function App() {
           </h1>
 
           <p>
-            This worksheet is intended to be used in conjunction with Appfigures while doing keyword research for the iOS app store. This <a href="https://appfigures.com/resources/guides/which-keywords-to-optimize-for" target="_blank">Appfigures blog post</a> outlines the general approach.
+            This worksheet is intended to be used in conjunction with Appfigures while doing keyword research for the iOS app store. This
+            {' '}
+            <a href="https://appfigures.com/resources/guides/which-keywords-to-optimize-for" target="_blank">Appfigures blog post</a>
+            {' '}
+            outlines the general approach.
           </p>
 
           <p>
