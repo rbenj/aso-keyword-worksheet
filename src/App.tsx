@@ -27,8 +27,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { GripVertical } from 'lucide-react';
+} from '@/components/ui/select';
+import { GripVertical, AlertTriangle } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
 
 interface Phrase {
   id: number;
@@ -57,7 +60,7 @@ const STOP_WORDS = new Set([
 ]);
 
 // Add all stop words as uncountable to prevent pluralization
-STOP_WORDS.forEach(word => {
+STOP_WORDS.forEach((word) => {
   pluralize.addUncountableRule(word);
 });
 
@@ -105,7 +108,7 @@ const GAME_CATEGORIES = [
   'Sports',
   'Strategy',
   'Trivia',
-  'Word'
+  'Word',
 ];
 
 function PhraseItem({ phrase }: { phrase: Phrase }) {
@@ -179,7 +182,7 @@ function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] 
     // Add text before this word
     if (word.startIndex > lastIndex) {
       parts.push(
-        <span key={`text-${index}`}>{text.substring(lastIndex, word.startIndex)}</span>
+        <span key={`text-${index}`}>{text.substring(lastIndex, word.startIndex)}</span>,
       );
     }
 
@@ -201,7 +204,7 @@ function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] 
     parts.push(
       <span key={`word-${index}`} className={bgColor}>
         {word.word}
-      </span>
+      </span>,
     );
 
     lastIndex = word.endIndex;
@@ -237,7 +240,7 @@ function App() {
     const allWords: string[] = [];
 
     // Extract words from phrases
-    phrases.forEach(phrase => {
+    phrases.forEach((phrase) => {
       phrase.text
         .trim()
         .replace(/[^a-zA-Z0-9]/g, ' ')
@@ -302,7 +305,7 @@ function App() {
         .split(/\s+/)
         .filter(word => word.length > 0 && !STOP_WORDS.has(word));
 
-      categoryWords.forEach(word => {
+      categoryWords.forEach((word) => {
         const wordSingular = pluralize.singular(word);
         if (!isKeywordInNameOrSubtitle(wordSingular)) {
           owned.set(wordSingular, (owned.get(wordSingular) || 0) + 1);
@@ -318,7 +321,7 @@ function App() {
         .split(/\s+/)
         .filter(word => word.length > 0 && !STOP_WORDS.has(word));
 
-      gameCategoryWords.forEach(word => {
+      gameCategoryWords.forEach((word) => {
         const wordSingular = pluralize.singular(word);
         if (!isKeywordInNameOrSubtitle(wordSingular)) {
           owned.set(wordSingular, (owned.get(wordSingular) || 0) + 1);
@@ -335,12 +338,121 @@ function App() {
   // Convert ownedKeywords to Set for faster lookup (without counts)
   const ownedKeywordsSet = useMemo(() => new Set(ownedKeywords.keys()), [ownedKeywords]);
 
+  // Extract owned keywords in order to compute ranks
+  // Order: name, subtitle, category (if not in name/subtitle), gameCategory (if not in name/subtitle), keywords
+  const ownedKeywordsOrdered = useMemo(() => {
+    const ordered: string[] = [];
+    const seen = new Set<string>();
+
+    // Helper function to extract keywords from text and add to ordered list
+    const extractKeywords = (text: string) => {
+      const regex = /\b\w+\b/g;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        const wordLower = match[0].toLowerCase();
+        if (!STOP_WORDS.has(wordLower)) {
+          const wordSingular = pluralize.singular(wordLower);
+          if (!seen.has(wordSingular)) {
+            ordered.push(wordSingular);
+            seen.add(wordSingular);
+          }
+        }
+      }
+    };
+
+    // Helper function to check if a keyword is already in name or subtitle
+    const isKeywordInNameOrSubtitle = (keyword: string): boolean => {
+      const nameSubtitleText = [metaName, metaSubtitle].join(' ').toLowerCase();
+      const regex = /\b\w+\b/g;
+      let match;
+      while ((match = regex.exec(nameSubtitleText)) !== null) {
+        const wordLower = match[0].toLowerCase();
+        const wordSingular = pluralize.singular(wordLower);
+        if (wordSingular === keyword) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Extract from name and subtitle first
+    extractKeywords(metaName);
+    extractKeywords(metaSubtitle);
+
+    // Extract from category (only if not already in name/subtitle)
+    if (selectedCategory) {
+      const categoryWords = selectedCategory
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 0 && !STOP_WORDS.has(word));
+
+      categoryWords.forEach((word) => {
+        const wordSingular = pluralize.singular(word);
+        if (!isKeywordInNameOrSubtitle(wordSingular) && !seen.has(wordSingular)) {
+          ordered.push(wordSingular);
+          seen.add(wordSingular);
+        }
+      });
+    }
+
+    // Extract from game category (only if not already in name/subtitle)
+    if (selectedGameCategory) {
+      const gameCategoryWords = selectedGameCategory
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 0 && !STOP_WORDS.has(word));
+
+      gameCategoryWords.forEach((word) => {
+        const wordSingular = pluralize.singular(word);
+        if (!isKeywordInNameOrSubtitle(wordSingular) && !seen.has(wordSingular)) {
+          ordered.push(wordSingular);
+          seen.add(wordSingular);
+        }
+      });
+    }
+
+    // Extract from keywords field
+    extractKeywords(metaKeywords);
+
+    return ordered;
+  }, [metaName, metaSubtitle, metaKeywords, selectedCategory, selectedGameCategory]);
+
+  // Compute rank comparison chart data
+  // Deviation = ownedRank - idealRank (positive = later than ideal, negative = earlier than ideal)
+  const rankChartData = useMemo(() => {
+    if (keywords.length === 0) { return []; }
+
+    // Create a map of keyword to its rank in owned keywords (1-based)
+    const ownedRankMap = new Map<string, number>();
+    ownedKeywordsOrdered.forEach((keyword, index) => {
+      ownedRankMap.set(keyword, index + 1);
+    });
+
+    const missingRank = keywords.length + 1;
+
+    const data = keywords.map((keyword, idealIndex) => {
+      const idealRank = idealIndex + 1; // 1-based ideal rank
+      const ownedRank = ownedRankMap.get(keyword) ?? missingRank;
+      const deviation = ownedRank - idealRank; // Positive = later, negative = earlier
+      return {
+        idealRank: idealRank,
+        deviation: deviation,
+        keyword: keyword,
+      };
+    });
+
+    // Sort by idealRank
+    return data.sort((a, b) => a.idealRank - b.idealRank);
+  }, [keywords, ownedKeywordsOrdered]);
+
   // Find which keywords are satisfied (appear in meta fields)
   // Compare using singularized versions since Apple treats plurals and non-plurals the same
   const satisfiedKeywords = useMemo(() => {
     const satisfied = new Set<string>();
 
-    keywords.forEach(keyword => {
+    keywords.forEach((keyword) => {
       // Check if keyword appears in owned keywords
       if (ownedKeywordsSet.has(keyword)) {
         satisfied.add(keyword);
@@ -434,7 +546,7 @@ function App() {
     allMatches.sort((a, b) => a.index - b.index);
 
     // Process matches and create analyses
-    allMatches.forEach(match => {
+    allMatches.forEach((match) => {
       if (match.isWhitespace) {
         analyses.push({
           word: match.text,
@@ -489,7 +601,7 @@ function App() {
         !afterNext.isWhitespace) {
 
         // Found start of multi-word sequence
-        let sequenceStart = current.index;
+        const sequenceStart = current.index;
         let sequenceText = current.text;
         let sequenceEnd = afterNext.index + afterNext.text.length;
         sequenceText += ' ' + afterNext.text;
@@ -520,8 +632,8 @@ function App() {
     }
 
     // Mark all analyses that are part of multi-word sequences (only words, not whitespace)
-    multiWordSequences.forEach(sequence => {
-      analyses.forEach(analysis => {
+    multiWordSequences.forEach((sequence) => {
+      analyses.forEach((analysis) => {
         if (analysis.startIndex >= sequence.startIndex &&
           analysis.endIndex <= sequence.endIndex &&
           analysis.type !== 'whitespace') {
@@ -542,9 +654,9 @@ function App() {
     let wastedCharCount = 0;
 
     // Analyze name and subtitle
-    [metaName, metaSubtitle].forEach(text => {
+    [metaName, metaSubtitle].forEach((text) => {
       const words = analyzeText(text);
-      words.forEach(word => {
+      words.forEach((word) => {
         const wordLower = word.word.toLowerCase();
         if (word.type === 'stop') {
           stopWords.add(wordLower);
@@ -609,11 +721,11 @@ function App() {
 
   // Generate unused phrase combinations using pluralization
   const unusedPhrases = useMemo(() => {
-    if (phrases.length === 0) return [];
+    if (phrases.length === 0) { return []; }
 
     // Get existing phrase texts (already normalized: lowercase, trimmed, single spaces)
     const existingPhrases = new Set(
-      phrases.map(phrase => phrase.text)
+      phrases.map(phrase => phrase.text),
     );
 
     const combinations: string[] = [];
@@ -625,7 +737,7 @@ function App() {
         .map(word => word.trim())
         .filter(word => word.length > 0);
 
-      if (words.length === 0) continue;
+      if (words.length === 0) { continue; }
 
       // Generate all combinations where at least one word is pluralized
       // For each word, we can either keep it or pluralize it
@@ -729,7 +841,7 @@ function App() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((category) => (
+                    {CATEGORIES.map(category => (
                       <SelectItem key={category} value={category}>
                         {category}
                       </SelectItem>
@@ -746,7 +858,7 @@ function App() {
                       <SelectValue placeholder="Select game category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {GAME_CATEGORIES.map((gameCategory) => (
+                      {GAME_CATEGORIES.map(gameCategory => (
                         <SelectItem key={gameCategory} value={gameCategory}>
                           {gameCategory}
                         </SelectItem>
@@ -796,7 +908,7 @@ function App() {
               </div>
 
               {/* Analysis Box */}
-              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0 || /[A-Z]/.test(metaKeywords)) && (
                 <div className="p-4 border rounded bg-muted">
                   <h3 className="font-semibold mb-4">Analysis</h3>
 
@@ -823,8 +935,14 @@ function App() {
                   )}
 
                   {/* Analysis Section */}
-                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0 || /[A-Z]/.test(metaKeywords)) && (
                     <div className="space-y-3">
+                      {/[A-Z]/.test(metaKeywords) && (
+                        <div className="flex items-center gap-2 p-2 bg-yellow-100 border border-yellow-300 rounded">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                          <p className="text-sm text-yellow-800">Keywords field contains uppercase characters. Apple keywords should be lowercase.</p>
+                        </div>
+                      )}
                       {metaAnalysis.pluralKeywords.size > 0 && (
                         <div>
                           <p className="text-sm font-medium mb-1">Plural Keywords (Apple treats plurals and non-plurals the same):</p>
@@ -887,7 +1005,10 @@ function App() {
                       )}
                       {metaAnalysis.wastedCharCount > 0 && (
                         <div>
-                          <p className="text-sm font-medium">Wasted Character Count: <span className="font-bold">{metaAnalysis.wastedCharCount}</span></p>
+                          <p className="text-sm font-medium">
+                            Wasted Character Count:
+                            <span className="font-bold">{metaAnalysis.wastedCharCount}</span>
+                          </p>
                         </div>
                       )}
                     </div>
@@ -975,6 +1096,100 @@ function App() {
                 )}
               </div>
             </div>
+
+            {/* Rank Comparison Chart */}
+            {keywords.length > 0 && (
+              <div>
+                <h2>
+                  Keyword Rank Comparison
+                </h2>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Ideal vs Owned Rank</CardTitle>
+                    <CardDescription>
+                      Compare the ideal keyword order with the actual order in meta fields
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        deviation: {
+                          label: 'Deviation',
+                        },
+                      }}
+                    >
+                      <BarChart
+                        accessibilityLayer
+                        data={rankChartData}
+                        margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="idealRank"
+                          type="number"
+                          label={{ value: 'Ideal Rank', position: 'insideBottom', offset: -5 }}
+                          domain={[1, keywords.length]}
+                        />
+                        <YAxis
+                          label={{ value: 'Deviation from Ideal', angle: -90, position: 'insideLeft' }}
+                          domain={['auto', 'auto']}
+                          allowDataOverflow={false}
+                        />
+                        <ChartTooltip
+                          cursor={false}
+                          content={
+                            <ChartTooltipContent
+                              hideLabel
+                              hideIndicator
+                              labelFormatter={(_value, payload) => {
+                                if (payload && payload[0]?.payload?.keyword) {
+                                  const item = payload[0].payload;
+                                  const deviation = item.deviation;
+                                  const idealRank = item.idealRank;
+                                  const ownedRank = idealRank + deviation;
+                                  return (
+                                    <div>
+                                      <div className="font-medium">Keyword: {item.keyword}</div>
+                                      <div className="text-muted-foreground">
+                                        Ideal: {idealRank}, Owned: {ownedRank > keywords.length ? 'Missing' : ownedRank}
+                                      </div>
+                                      <div className={deviation === 0 ? 'text-green-600' : deviation > 0 ? 'text-orange-600' : 'text-blue-600'}>
+                                        Deviation: {deviation > 0 ? '+' : ''}{deviation}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          }
+                        />
+                        <Bar dataKey="deviation">
+                          <LabelList
+                            position={(entry: any) => entry.deviation >= 0 ? 'top' : 'bottom'}
+                            dataKey="keyword"
+                            fillOpacity={1}
+                            className="text-xs"
+                          />
+                          {rankChartData.map((item, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                item.deviation === 0
+                                  ? 'hsl(var(--chart-3))' // Green for perfect match
+                                  : item.deviation > 0
+                                    ? 'hsl(var(--chart-2))' // Orange/red for later than ideal
+                                    : 'hsl(var(--chart-1))' // Blue for earlier than ideal
+                              }
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Unused */}
             <div>
