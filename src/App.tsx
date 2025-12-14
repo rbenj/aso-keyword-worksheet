@@ -21,6 +21,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { GripVertical } from 'lucide-react';
 
 interface Phrase {
@@ -48,6 +55,53 @@ const STOP_WORDS = new Set([
   'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your',
   'yours', 'yourself', 'yourselves',
 ]);
+
+const CATEGORIES = [
+  'Books',
+  'Business',
+  'Developer Tools',
+  'Education',
+  'Entertainment',
+  'Finance',
+  'Food & Drink',
+  'Games',
+  'Graphics & Design',
+  'Health & Fitness',
+  'Lifestyle',
+  'Magazines & Newspapers',
+  'Medical',
+  'Music',
+  'Navigation',
+  'News',
+  'Photo & Video',
+  'Productivity',
+  'Reference',
+  'Social Networking',
+  'Shopping',
+  'Sports',
+  'Travel',
+  'Utilities',
+  'Weather',
+];
+
+const GAME_CATEGORIES = [
+  'Action',
+  'Adventure',
+  'Board',
+  'Card',
+  'Casino',
+  'Casual',
+  'Family',
+  'Music',
+  'Puzzle',
+  'Racing',
+  'Role Playing',
+  'Simulation',
+  'Sports',
+  'Strategy',
+  'Trivia',
+  'Word'
+];
 
 function PhraseItem({ phrase }: { phrase: Phrase }) {
   const {
@@ -96,6 +150,8 @@ function App() {
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [phraseText, setPhraseText] = useState('');
   const [phraseScore, setPhraseScore] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedGameCategory, setSelectedGameCategory] = useState<string>('');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -104,19 +160,43 @@ function App() {
     }),
   );
 
-  // Extract unique words from all phrases (excluding stop words)
+  // Extract unique words from all phrases, category, and game category (excluding stop words)
   const keywords = useMemo(() => {
-    const allWords = phrases.flatMap(phrase =>
+    const allWords: string[] = [];
+
+    // Extract words from phrases
+    phrases.forEach(phrase => {
       phrase.text
         .split(/\s+/)
         .map(word => word.trim())
         .filter(word => word.length > 0)
-        .filter(word => !STOP_WORDS.has(word.toLowerCase())),
-    );
+        .filter(word => !STOP_WORDS.has(word.toLowerCase()))
+        .forEach(word => allWords.push(word));
+    });
+
+    // Extract words from selected category
+    if (selectedCategory) {
+      selectedCategory
+        .split(/\s+/)
+        .map(word => word.trim())
+        .filter(word => word.length > 0)
+        .filter(word => !STOP_WORDS.has(word.toLowerCase()))
+        .forEach(word => allWords.push(word));
+    }
+
+    // Extract words from selected game category
+    if (selectedGameCategory) {
+      selectedGameCategory
+        .split(/\s+/)
+        .map(word => word.trim())
+        .filter(word => word.length > 0)
+        .filter(word => !STOP_WORDS.has(word.toLowerCase()))
+        .forEach(word => allWords.push(word));
+    }
 
     // Remove duplicates by converting to a Set and then back to an array
     return Array.from(new Set(allWords));
-  }, [phrases]);
+  }, [phrases, selectedCategory, selectedGameCategory]);
 
   // Generate unused phrase combinations using pluralization
   const unusedPhrases = useMemo(() => {
@@ -195,6 +275,13 @@ function App() {
     }
   };
 
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    if (value !== 'Games') {
+      setSelectedGameCategory('');
+    }
+  };
+
   return (
     <>
       <div className="w-full min-h-screen bg-background">
@@ -214,18 +301,52 @@ function App() {
             {/* Meta */}
             <div className="flex flex-col gap-4">
               <div className="space-y-2">
-                <Label htmlFor="metaTitle">Title</Label>
-                <Input id="metaTitle" defaultValue="---" />
+                <Label htmlFor="category">Category</Label>
+                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedCategory === 'Games' && (
+                <div className="space-y-2">
+                  <Label htmlFor="gameCategory">Game Category</Label>
+                  <Select value={selectedGameCategory} onValueChange={setSelectedGameCategory}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select game category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GAME_CATEGORIES.map((gameCategory) => (
+                        <SelectItem key={gameCategory} value={gameCategory}>
+                          {gameCategory}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="metaTitle">Name</Label>
+                <Input id="metaTitle" defaultValue="" />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="metaSubTitle">Sub title</Label>
-                <Input id="metaSubTitle" defaultValue="---" />
+                <Label htmlFor="metaSubTitle">Subtitle</Label>
+                <Input id="metaSubTitle" defaultValue="" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="metaKeywords">Keywords</Label>
-                <Input id="metaKeywords" defaultValue="---" />
+                <Input id="metaKeywords" defaultValue="" />
               </div>
             </div>
 
