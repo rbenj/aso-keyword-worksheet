@@ -30,9 +30,11 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "cypress": "cypress run"
+    "cypress": "cypress run",
+    "shadcn:add": "npx shadcn@latest add"
   },
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
@@ -40,7 +42,6 @@
     "dexie": "^4.2.1",
     "lucide-react": "^0.561.0",
     "normalize.css": "^8.0.1",
-    "rapidprotokit-schema-mold": "github:rbenj/rapidprotokit-schema-mold",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
