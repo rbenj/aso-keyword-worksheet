@@ -1,4 +1,5 @@
 import pluralize from 'pluralize';
+import * as React from 'react';
 import { useState, useMemo } from 'react';
 import {
   closestCenter,
@@ -28,10 +29,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GripVertical, AlertTriangle, Star, Shield, ExternalLink } from 'lucide-react';
+import { GripVertical, AlertTriangle, Star, Shield, ExternalLink, Pencil } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { cn } from '@/lib/utils';
 
 interface Phrase {
   id: number;
@@ -112,7 +131,7 @@ const GAME_CATEGORIES = [
   'Word',
 ];
 
-function PhraseItem({ phrase }: { phrase: Phrase }) {
+function PhraseItem({ phrase, onEdit }: { phrase: Phrase; onEdit: () => void }) {
   const {
     attributes,
     isDragging,
@@ -161,6 +180,15 @@ function PhraseItem({ phrase }: { phrase: Phrase }) {
             <span>{phrase.competitiveness}</span>
           </div>
         )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
         <a
           href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(phrase.text)}`}
           target="_blank"
@@ -189,6 +217,142 @@ interface MetaAnalysis {
   multiWordKeywords: Set<string>;
   pluralKeywords: Set<string>;
   wastedCharCount: number;
+}
+
+function EditPhraseDialog({
+  phrase,
+  open,
+  onOpenChange,
+  onSave
+}: {
+  phrase: Phrase | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (phrase: Phrase) => void;
+}) {
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [text, setText] = useState('');
+  const [popularity, setPopularity] = useState('');
+  const [competitiveness, setCompetitiveness] = useState('');
+
+  // Update form when phrase changes
+  React.useEffect(() => {
+    if (phrase) {
+      setText(phrase.text);
+      setPopularity(phrase.popularity?.toString() || '');
+      setCompetitiveness(phrase.competitiveness?.toString() || '');
+    }
+  }, [phrase]);
+
+  const handleSave = () => {
+    if (!phrase || !text.trim()) return;
+
+    // Normalize phrase: lowercase, trim, and remove extra whitespace
+    const normalizedText = text
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+
+    // Parse popularity (0-100)
+    const popularityValue = popularity.trim()
+      ? Math.max(0, Math.min(100, parseInt(popularity.trim(), 10) || 0))
+      : undefined;
+
+    // Parse competitiveness (0-100)
+    const competitivenessValue = competitiveness.trim()
+      ? Math.max(0, Math.min(100, parseInt(competitiveness.trim(), 10) || 0))
+      : undefined;
+
+    onSave({
+      ...phrase,
+      text: normalizedText,
+      popularity: popularityValue,
+      competitiveness: competitivenessValue,
+    });
+    onOpenChange(false);
+  };
+
+  if (!phrase) return null;
+
+  const PhraseForm = ({ className }: { className?: string }) => (
+    <form
+      className={cn("grid items-start gap-4", className)}
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSave();
+      }}
+    >
+      <div className="grid gap-2">
+        <Label htmlFor="edit-phrase-text">Phrase Text</Label>
+        <Input
+          id="edit-phrase-text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Phrase text"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="edit-phrase-popularity">Popularity (0-100)</Label>
+        <Input
+          id="edit-phrase-popularity"
+          type="number"
+          min="0"
+          max="100"
+          value={popularity}
+          onChange={(e) => setPopularity(e.target.value)}
+          placeholder="Popularity (0-100)"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="edit-phrase-competitiveness">Competitiveness (0-100)</Label>
+        <Input
+          id="edit-phrase-competitiveness"
+          type="number"
+          min="0"
+          max="100"
+          value={competitiveness}
+          onChange={(e) => setCompetitiveness(e.target.value)}
+          placeholder="Competitiveness (0-100)"
+        />
+      </div>
+      <Button type="submit">Save changes</Button>
+    </form>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit phrase</DialogTitle>
+            <DialogDescription>
+              Make changes to your phrase here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <PhraseForm />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Edit phrase</DrawerTitle>
+          <DrawerDescription>
+            Make changes to your phrase here. Click save when you're done.
+          </DrawerDescription>
+        </DrawerHeader>
+        <PhraseForm className="px-4" />
+        <DrawerFooter className="pt-2">
+          <DrawerClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
 }
 
 function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] }) {
@@ -249,6 +413,8 @@ function App() {
   const [metaName, setMetaName] = useState<string>('');
   const [metaSubtitle, setMetaSubtitle] = useState<string>('');
   const [metaKeywords, setMetaKeywords] = useState<string>('');
+  const [editingPhrase, setEditingPhrase] = useState<Phrase | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -850,6 +1016,18 @@ function App() {
     }
   };
 
+  const handleEditPhrase = (phrase: Phrase) => {
+    setEditingPhrase(phrase);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSavePhrase = (updatedPhrase: Phrase) => {
+    setPhrases((prevPhrases) =>
+      prevPhrases.map((p) => (p.id === updatedPhrase.id ? updatedPhrase : p))
+    );
+    setEditingPhrase(null);
+  };
+
   return (
     <>
       <div className="w-full min-h-screen bg-background">
@@ -1105,7 +1283,11 @@ function App() {
                     strategy={verticalListSortingStrategy}
                   >
                     {phrases.map(phrase => (
-                      <PhraseItem key={phrase.id} phrase={phrase} />
+                      <PhraseItem
+                        key={phrase.id}
+                        phrase={phrase}
+                        onEdit={() => handleEditPhrase(phrase)}
+                      />
                     ))}
                   </SortableContext>
                 </DndContext>
@@ -1215,7 +1397,7 @@ function App() {
                         />
                         <Bar dataKey="deviation">
                           <LabelList
-                            position={(entry: any) => entry.deviation >= 0 ? 'top' : 'bottom'}
+                            position="top"
                             dataKey="keyword"
                             fillOpacity={1}
                             className="text-xs"
@@ -1277,6 +1459,13 @@ function App() {
           </div>
         </div>
       </div>
+
+      <EditPhraseDialog
+        phrase={editingPhrase}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleSavePhrase}
+      />
     </>
   );
 }
