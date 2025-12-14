@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GripVertical, AlertTriangle } from 'lucide-react';
+import { GripVertical, AlertTriangle, Star, Shield, ExternalLink } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
@@ -36,7 +36,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'rec
 interface Phrase {
   id: number;
   text: string;
-  score: string;
+  popularity?: number; // 0-100
+  competitiveness?: number; // 0-100
 }
 
 const STOP_WORDS = new Set([
@@ -147,8 +148,28 @@ function PhraseItem({ phrase }: { phrase: Phrase }) {
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground">
-        {phrase.score}
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        {phrase.popularity !== undefined && (
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4" />
+            <span>{phrase.popularity}</span>
+          </div>
+        )}
+        {phrase.competitiveness !== undefined && (
+          <div className="flex items-center gap-1">
+            <Shield className="h-4 w-4" />
+            <span>{phrase.competitiveness}</span>
+          </div>
+        )}
+        <a
+          href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(phrase.text)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="h-4 w-4" />
+        </a>
       </div>
     </div>
   );
@@ -221,7 +242,8 @@ function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] 
 function App() {
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [phraseText, setPhraseText] = useState('');
-  const [phraseScore, setPhraseScore] = useState('');
+  const [phrasePopularity, setPhrasePopularity] = useState('');
+  const [phraseCompetitiveness, setPhraseCompetitiveness] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedGameCategory, setSelectedGameCategory] = useState<string>('');
   const [metaName, setMetaName] = useState<string>('');
@@ -779,21 +801,33 @@ function App() {
   }, [phrases]);
 
   const handleAddPhrase = () => {
-    if (phraseText.trim() && phraseScore.trim()) {
+    if (phraseText.trim()) {
       // Normalize phrase: lowercase, trim, and remove extra whitespace
       const normalizedText = phraseText
         .trim()
         .toLowerCase()
         .replace(/\s+/g, ' ');
 
+      // Parse popularity (0-100)
+      const popularity = phrasePopularity.trim()
+        ? Math.max(0, Math.min(100, parseInt(phrasePopularity.trim(), 10) || 0))
+        : undefined;
+
+      // Parse competitiveness (0-100)
+      const competitiveness = phraseCompetitiveness.trim()
+        ? Math.max(0, Math.min(100, parseInt(phraseCompetitiveness.trim(), 10) || 0))
+        : undefined;
+
       const newPhrase: Phrase = {
         id: Date.now(),
         text: normalizedText,
-        score: phraseScore.trim(),
+        popularity,
+        competitiveness,
       };
       setPhrases([...phrases, newPhrase]);
       setPhraseText('');
-      setPhraseScore('');
+      setPhrasePopularity('');
+      setPhraseCompetitiveness('');
     }
   };
 
@@ -1032,12 +1066,27 @@ function App() {
                   value={phraseText}
                 />
 
-                <Input
-                  id="addPhraseScore"
-                  onChange={e => setPhraseScore(e.target.value)}
-                  placeholder="Phrase score"
-                  value={phraseScore}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="addPhrasePopularity"
+                    type="number"
+                    min="0"
+                    max="100"
+                    onChange={e => setPhrasePopularity(e.target.value)}
+                    placeholder="Popularity (0-100)"
+                    value={phrasePopularity}
+                  />
+
+                  <Input
+                    id="addPhraseCompetitiveness"
+                    type="number"
+                    min="0"
+                    max="100"
+                    onChange={e => setPhraseCompetitiveness(e.target.value)}
+                    placeholder="Competitiveness (0-100)"
+                    value={phraseCompetitiveness}
+                  />
+                </div>
 
                 <Button id="addPhraseButton" onClick={handleAddPhrase}>
                   Add
@@ -1202,8 +1251,21 @@ function App() {
             <div className="flex flex-wrap gap-2">
               {unusedPhrases.length > 0 ? (
                 unusedPhrases.map((phrase, index) => (
-                  <Badge key={index} variant="outline">
-                    {phrase}
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-muted"
+                    asChild
+                  >
+                    <a
+                      href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(phrase)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1"
+                    >
+                      {phrase}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </Badge>
                 ))
               ) : (
