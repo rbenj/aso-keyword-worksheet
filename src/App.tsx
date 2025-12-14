@@ -1,7 +1,112 @@
+import { useState } from 'react';
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { GripVertical } from 'lucide-react';
+
+interface Phrase {
+  id: number;
+  text: string;
+  score: string;
+}
+
+function PhraseItem({ phrase }: { phrase: Phrase }) {
+  const {
+    attributes,
+    isDragging,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: phrase.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between p-2 border rounded bg-background"
+    >
+      <div className="flex items-center gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+
+        <div className="font-medium">
+          {phrase.text}
+        </div>
+      </div>
+
+      <div className="text-sm text-muted-foreground">
+        {phrase.score}
+      </div>
+    </div>
+  );
+}
 
 function App() {
+  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [phraseText, setPhraseText] = useState('');
+  const [phraseScore, setPhraseScore] = useState('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleAddPhrase = () => {
+    if (phraseText.trim() && phraseScore.trim()) {
+      const newPhrase: Phrase = {
+        id: Date.now(),
+        text: phraseText.trim(),
+        score: phraseScore.trim(),
+      };
+      setPhrases([...phrases, newPhrase]);
+      setPhraseText('');
+      setPhraseScore('');
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setPhrases((items) => {
+        const oldIndex = items.findIndex(item => item.id === active.id);
+        const newIndex = items.findIndex(item => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   return (
     <>
       <div className="w-full min-h-screen bg-background">
@@ -16,7 +121,8 @@ function App() {
         </div>
 
         <div className="w-full flex gap-4 px-4">
-          <div className="flex-1">
+          <div className="flex-1 flex flex-col gap-10">
+            {/* Meta */}
             <div className="flex flex-col gap-4">
               <div className="space-y-2">
                 <Label htmlFor="metaTitle">Title</Label>
@@ -34,8 +140,56 @@ function App() {
               </div>
             </div>
 
+            {/* Phrases */}
             <div>
-              Items
+              <h2>
+                Phrases
+              </h2>
+
+              {/* Phrases Input */}
+              <div className="space-y-2">
+                <Input
+                  id="addPhraseText"
+                  onChange={e => setPhraseText(e.target.value)}
+                  placeholder="Phrase text"
+                  value={phraseText}
+                />
+
+                <Input
+                  id="addPhraseScore"
+                  onChange={e => setPhraseScore(e.target.value)}
+                  placeholder="Phrase score"
+                  value={phraseScore}
+                />
+
+                <Button id="addPhraseButton" onClick={handleAddPhrase}>
+                  Add
+                </Button>
+              </div>
+
+              {/* Phrases items */}
+              <div className="mt-4 space-y-2">
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                  sensors={sensors}
+                >
+                  <SortableContext
+                    items={phrases.map(p => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {phrases.map(phrase => (
+                      <PhraseItem key={phrase.id} phrase={phrase} />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+
+                {phrases.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Add a phrase to get started
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
