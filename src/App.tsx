@@ -1103,7 +1103,11 @@ function App() {
           </h1>
 
           <p>
-            This worksheet is intended to be used in conjunction with Appfigures while doing keyword research. This <a href="https://appfigures.com/resources/guides/which-keywords-to-optimize-for" target="_blank">Appfigures blog post</a> outlines the general approach.
+            This worksheet is intended to be used in conjunction with Appfigures while doing keyword research for the iOS app store. This <a href="https://appfigures.com/resources/guides/which-keywords-to-optimize-for" target="_blank">Appfigures blog post</a> outlines the general approach.
+          </p>
+
+          <p>
+            All data is stored locally in your browser. This app is not affiliated with, endorsed by, or associated with Appfigures or Apple. This tool is provided for informational and academic purposes only and does not constitute advice of any kind. The functionality and algorithms are based on assumptions that may be inaccurate.
           </p>
         </div>
 
@@ -1112,6 +1116,40 @@ function App() {
           <div className="flex-1 flex flex-col gap-10">
             {/* Meta */}
             <div className="flex flex-col gap-4">
+              <h2>
+                App Meta
+              </h2>
+
+              <p>
+                These fields align with your app's information in App Store Connect. Keywords lose power from top to bottom and left to right. A keyword at the start of your app's name is worth much more than a keyword at the end of your keyword list.
+              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="metaTitle">Name</Label>
+                <Input
+                  id="metaTitle"
+                  value={metaName}
+                  onChange={e => setMetaName(e.target.value)}
+                  maxLength={30}
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {metaName.length}/30
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="metaSubTitle">Subtitle</Label>
+                <Input
+                  id="metaSubTitle"
+                  value={metaSubtitle}
+                  onChange={e => setMetaSubtitle(e.target.value)}
+                  maxLength={30}
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {metaSubtitle.length}/30
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select value={selectedCategory} onValueChange={handleCategoryChange}>
@@ -1147,33 +1185,7 @@ function App() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="metaTitle">Name</Label>
-                <Input
-                  id="metaTitle"
-                  value={metaName}
-                  onChange={e => setMetaName(e.target.value)}
-                  maxLength={30}
-                />
-                <div className="text-xs text-muted-foreground text-right">
-                  {metaName.length}/30
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="metaSubTitle">Subtitle</Label>
-                <Input
-                  id="metaSubTitle"
-                  value={metaSubtitle}
-                  onChange={e => setMetaSubtitle(e.target.value)}
-                  maxLength={30}
-                />
-                <div className="text-xs text-muted-foreground text-right">
-                  {metaSubtitle.length}/30
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="metaKeywords">Keywords</Label>
+                <Label htmlFor="metaKeywords">Keyword List (single words, comma seperated, no spaces)</Label>
                 <Input
                   id="metaKeywords"
                   value={metaKeywords}
@@ -1184,15 +1196,125 @@ function App() {
                   {metaKeywords.length}/100
                 </div>
               </div>
+            </div>
 
-              {/* Analysis Box */}
+            {/* Search Queries */}
+            <div>
+              <h2>
+                Search Queries
+              </h2>
+
+              <p>
+                Enter the search queries you would like to rank for, ordered by priority. Popularity and Competitiveness fields map to values in Appfigures. Find a balance that makes sense for your app and your optimization strategy.
+              </p>
+
+              {/* Search Queries Input */}
+              <div className="space-y-2">
+                <Input
+                  id="addSearchQueryText"
+                  onChange={e => setSearchQueryText(e.target.value)}
+                  placeholder="Search query text"
+                  value={searchQueryText}
+                />
+
+                <div className="flex gap-2">
+                  <Input
+                    id="addSearchQueryPopularity"
+                    type="number"
+                    min="0"
+                    max="100"
+                    onChange={e => setSearchQueryPopularity(e.target.value)}
+                    placeholder="Popularity (0-100)"
+                    value={searchQueryPopularity}
+                  />
+
+                  <Input
+                    id="addSearchQueryCompetitiveness"
+                    type="number"
+                    min="0"
+                    max="100"
+                    onChange={e => setSearchQueryCompetitiveness(e.target.value)}
+                    placeholder="Competitiveness (0-100)"
+                    value={searchQueryCompetitiveness}
+                  />
+                </div>
+
+                <Button id="addSearchQueryButton" onClick={handleAddSearchQuery}>
+                  Add
+                </Button>
+              </div>
+
+              {/* Search Queries items */}
+              <div className="mt-4 space-y-2">
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                  sensors={sensors}
+                >
+                  <SortableContext
+                    items={searchQueries.map(p => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {searchQueries.map(searchQuery => (
+                      <SearchQueryItem
+                        key={searchQuery.id}
+                        searchQuery={searchQuery}
+                        onEdit={() => handleEditSearchQuery(searchQuery)}
+                        onDelete={() => handleDeleteSearchQuery(searchQuery.id)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+
+                {searchQueries.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Add a search query to get started
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right col */}
+          <div className="flex-1 flex flex-col gap-10">
+            {/* Keywords */}
+            <div>
+              <h2>
+                Target Keywords
+              </h2>
+
+              <p>
+                These are the keywords that should be included in your app's meta. They are ordered to match the priority of your search queries. Only singular versions are listed (Apple does not differentiate between singular and plural words).
+              </p>
+
+              {/* Items */}
+              <div className="flex flex-wrap gap-2">
+                {keywords.length > 0 ? (
+                  keywords.map((keyword, index) => (
+                    <Badge
+                      key={index}
+                      className={satisfiedKeywords.has(keyword) ? 'bg-green-200' : ''}
+                    >
+                      {keyword}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No keywords yet
+                  </p>
+                )}
+              </div>
+
+              {/* Analysis */}
               {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0 || /[A-Z]/.test(metaKeywords)) && (
-                <div className="p-4 border rounded bg-muted">
-                  <h3 className="font-semibold mb-4">Analysis</h3>
+                <div className="mt-10">
+                  <h2>Analysis</h2>
+
+                  <p>Use these signals to optimize your app's meta.</p>
 
                   {/* Preview Section */}
                   {(metaName || metaSubtitle || metaKeywords) && (
-                    <div className="mb-4 space-y-2">
+                    <div className="mb-4 space-y-2 mt-4">
                       <h4 className="text-sm font-medium mb-2">Preview:</h4>
                       {metaName && (
                         <div className="text-sm">
@@ -1214,7 +1336,7 @@ function App() {
 
                   {/* Analysis Section */}
                   {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0 || /[A-Z]/.test(metaKeywords)) && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-4">
                       {/[A-Z]/.test(metaKeywords) && (
                         <div className="flex items-center gap-2 p-2 bg-yellow-100 border border-yellow-300 rounded">
                           <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
@@ -1295,117 +1417,18 @@ function App() {
               )}
             </div>
 
-            {/* Search Queries */}
-            <div>
-              <h2>
-                Search Queries
-              </h2>
-
-              {/* Search Queries Input */}
-              <div className="space-y-2">
-                <Input
-                  id="addSearchQueryText"
-                  onChange={e => setSearchQueryText(e.target.value)}
-                  placeholder="Search query text"
-                  value={searchQueryText}
-                />
-
-                <div className="flex gap-2">
-                  <Input
-                    id="addSearchQueryPopularity"
-                    type="number"
-                    min="0"
-                    max="100"
-                    onChange={e => setSearchQueryPopularity(e.target.value)}
-                    placeholder="Popularity (0-100)"
-                    value={searchQueryPopularity}
-                  />
-
-                  <Input
-                    id="addSearchQueryCompetitiveness"
-                    type="number"
-                    min="0"
-                    max="100"
-                    onChange={e => setSearchQueryCompetitiveness(e.target.value)}
-                    placeholder="Competitiveness (0-100)"
-                    value={searchQueryCompetitiveness}
-                  />
-                </div>
-
-                <Button id="addSearchQueryButton" onClick={handleAddSearchQuery}>
-                  Add
-                </Button>
-              </div>
-
-              {/* Search Queries items */}
-              <div className="mt-4 space-y-2">
-                <DndContext
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                  sensors={sensors}
-                >
-                  <SortableContext
-                    items={searchQueries.map(p => p.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {searchQueries.map(searchQuery => (
-                      <SearchQueryItem
-                        key={searchQuery.id}
-                        searchQuery={searchQuery}
-                        onEdit={() => handleEditSearchQuery(searchQuery)}
-                        onDelete={() => handleDeleteSearchQuery(searchQuery.id)}
-                      />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-
-                {searchQueries.length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Add a search query to get started
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right col */}
-          <div className="flex-1 flex flex-col gap-10">
-            {/* Keywords */}
-            <div>
-              <h2>
-                Keywords Needed in Meta
-              </h2>
-
-              {/* Items */}
-              <div className="flex flex-wrap gap-2">
-                {keywords.length > 0 ? (
-                  keywords.map((keyword, index) => (
-                    <Badge
-                      key={index}
-                      className={satisfiedKeywords.has(keyword) ? 'bg-green-200' : ''}
-                    >
-                      {keyword}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No keywords yet
-                  </p>
-                )}
-              </div>
-            </div>
-
             {/* Rank Comparison Chart */}
             {keywords.length > 0 && (
               <div>
                 <h2>
-                  Keyword Rank Comparison
+                  Keyword Effeciency
                 </h2>
+
                 <Card>
                   <CardHeader>
-                    <CardTitle>Ideal vs Owned Rank</CardTitle>
+                    <CardTitle>Ideal vs Actual</CardTitle>
                     <CardDescription>
-                      Compare the ideal keyword order with the actual order in meta fields
+                      Keywords lose power top to bottom and left to right.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1494,6 +1517,10 @@ function App() {
               <h2>
                 Unused Search Queries
               </h2>
+
+              <p>
+                A variation of your search query may have a very different popularity-to-competitiveness ratio. Check variations in word order and pluralization. Here are some possibilities, investigate these and any others that make sense.
+              </p>
             </div>
 
             {/* Items */}
