@@ -56,6 +56,11 @@ const STOP_WORDS = new Set([
   'yours', 'yourself', 'yourselves',
 ]);
 
+// Add all stop words as uncountable to prevent pluralization
+STOP_WORDS.forEach(word => {
+  pluralize.addUncountableRule(word);
+});
+
 const CATEGORIES = [
   'Books',
   'Business',
@@ -148,7 +153,7 @@ function PhraseItem({ phrase }: { phrase: Phrase }) {
 
 interface WordAnalysis {
   word: string;
-  type: 'normal' | 'stop' | 'wasted' | 'whitespace' | 'duplicate';
+  type: 'normal' | 'stop' | 'wasted' | 'whitespace' | 'duplicate' | 'multiword' | 'plural';
   startIndex: number;
   endIndex: number;
 }
@@ -157,6 +162,8 @@ interface MetaAnalysis {
   stopWords: Set<string>;
   wastedWords: Set<string>;
   duplicateKeywords: Set<string>;
+  multiWordKeywords: Set<string>;
+  pluralKeywords: Set<string>;
   wastedCharCount: number;
 }
 
@@ -186,6 +193,10 @@ function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] 
       bgColor = 'bg-red-200';
     } else if (word.type === 'duplicate') {
       bgColor = 'bg-purple-200';
+    } else if (word.type === 'multiword') {
+      bgColor = 'bg-red-800 text-white';
+    } else if (word.type === 'plural') {
+      bgColor = 'bg-blue-200';
     }
     parts.push(
       <span key={`word-${index}`} className={bgColor}>
@@ -221,7 +232,7 @@ function App() {
     }),
   );
 
-  // Extract unique words from all phrases (excluding stop words)
+  // Extract unique words from all phrases (excluding stop words) and convert to singular
   const keywords = useMemo(() => {
     const allWords: string[] = [];
 
@@ -234,6 +245,7 @@ function App() {
         .map(word => word.toLowerCase())
         .filter(word => word.length > 0)
         .filter(word => !STOP_WORDS.has(word))
+        .map(word => pluralize.singular(word)) // Convert to singular
         .forEach(word => allWords.push(word));
     });
 
@@ -244,31 +256,114 @@ function App() {
   // Convert keywords to Set for faster lookup
   const keywordsSet = useMemo(() => new Set(keywords), [keywords]);
 
-  // Find duplicate needed keywords across all meta fields
-  const duplicateKeywords = useMemo(() => {
-    const keywordCounts = new Map<string, number>();
-    const allTexts = [metaName, metaSubtitle, metaKeywords].join(' ');
+  // Extract and maintain owned keywords from meta fields (updated when meta changes)
+  // This is cached to avoid re-extracting on every comparison
+  // Order: name, subtitle, category (if not in name/subtitle), gameCategory (if not in name/subtitle), keywords
+  const ownedKeywords = useMemo(() => {
+    const owned = new Map<string, number>(); // Map to track counts for duplicate detection
 
-    // Count occurrences of needed keywords
-    const regex = /\b\w+\b/g;
-    let match;
-    while ((match = regex.exec(allTexts)) !== null) {
-      const wordLower = match[0].toLowerCase();
-      if (keywordsSet.has(wordLower) && !STOP_WORDS.has(wordLower)) {
-        keywordCounts.set(wordLower, (keywordCounts.get(wordLower) || 0) + 1);
+    // Helper function to extract keywords from text and add to owned map
+    const extractKeywords = (text: string) => {
+      const regex = /\b\w+\b/g;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        const wordLower = match[0].toLowerCase();
+        if (!STOP_WORDS.has(wordLower)) {
+          const wordSingular = pluralize.singular(wordLower);
+          owned.set(wordSingular, (owned.get(wordSingular) || 0) + 1);
+        }
       }
+    };
+
+    // Helper function to check if a keyword is already in name or subtitle
+    const isKeywordInNameOrSubtitle = (keyword: string): boolean => {
+      const nameSubtitleText = [metaName, metaSubtitle].join(' ').toLowerCase();
+      const regex = /\b\w+\b/g;
+      let match;
+      while ((match = regex.exec(nameSubtitleText)) !== null) {
+        const wordLower = match[0].toLowerCase();
+        const wordSingular = pluralize.singular(wordLower);
+        if (wordSingular === keyword) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Extract from name and subtitle first
+    extractKeywords(metaName);
+    extractKeywords(metaSubtitle);
+
+    // Extract from category (only if not already in name/subtitle)
+    if (selectedCategory) {
+      const categoryWords = selectedCategory
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 0 && !STOP_WORDS.has(word));
+
+      categoryWords.forEach(word => {
+        const wordSingular = pluralize.singular(word);
+        if (!isKeywordInNameOrSubtitle(wordSingular)) {
+          owned.set(wordSingular, (owned.get(wordSingular) || 0) + 1);
+        }
+      });
     }
 
-    // Return set of keywords that appear more than once
+    // Extract from game category (only if not already in name/subtitle)
+    if (selectedGameCategory) {
+      const gameCategoryWords = selectedGameCategory
+        .toLowerCase()
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 0 && !STOP_WORDS.has(word));
+
+      gameCategoryWords.forEach(word => {
+        const wordSingular = pluralize.singular(word);
+        if (!isKeywordInNameOrSubtitle(wordSingular)) {
+          owned.set(wordSingular, (owned.get(wordSingular) || 0) + 1);
+        }
+      });
+    }
+
+    // Extract from keywords field
+    extractKeywords(metaKeywords);
+
+    return owned;
+  }, [metaName, metaSubtitle, metaKeywords, selectedCategory, selectedGameCategory]);
+
+  // Convert ownedKeywords to Set for faster lookup (without counts)
+  const ownedKeywordsSet = useMemo(() => new Set(ownedKeywords.keys()), [ownedKeywords]);
+
+  // Find which keywords are satisfied (appear in meta fields)
+  // Compare using singularized versions since Apple treats plurals and non-plurals the same
+  const satisfiedKeywords = useMemo(() => {
+    const satisfied = new Set<string>();
+
+    keywords.forEach(keyword => {
+      // Check if keyword appears in owned keywords
+      if (ownedKeywordsSet.has(keyword)) {
+        satisfied.add(keyword);
+      }
+    });
+
+    return satisfied;
+  }, [keywords, ownedKeywordsSet]);
+
+  // Find duplicate needed keywords across all meta fields
+  // Compare using singularized versions since Apple treats plurals and non-plurals the same
+  const duplicateKeywords = useMemo(() => {
     const duplicates = new Set<string>();
-    keywordCounts.forEach((count, keyword) => {
-      if (count > 1) {
+
+    // Check owned keywords that are also in needed keywords and appear more than once
+    ownedKeywords.forEach((count, keyword) => {
+      if (keywordsSet.has(keyword) && count > 1) {
         duplicates.add(keyword);
       }
     });
 
     return duplicates;
-  }, [metaName, metaSubtitle, metaKeywords, keywordsSet]);
+  }, [ownedKeywords, keywordsSet]);
 
   // Analyze words in a text string
   const analyzeText = (text: string): WordAnalysis[] => {
@@ -279,14 +374,21 @@ function App() {
     while ((match = regex.exec(text)) !== null) {
       const word = match[0];
       const wordLower = word.toLowerCase();
+      const wordSingular = pluralize.singular(wordLower);
       let type: 'normal' | 'stop' | 'wasted' | 'duplicate' = 'normal';
 
       if (STOP_WORDS.has(wordLower)) {
         type = 'stop';
-      } else if (!keywordsSet.has(wordLower)) {
-        type = 'wasted';
-      } else if (duplicateKeywords.has(wordLower)) {
-        type = 'duplicate';
+      } else {
+        // Compare using singularized version
+        const isInKeywords = keywordsSet.has(wordSingular);
+        const isDuplicate = duplicateKeywords.has(wordSingular);
+
+        if (!isInKeywords) {
+          type = 'wasted';
+        } else if (isDuplicate) {
+          type = 'duplicate';
+        }
       }
 
       words.push({
@@ -342,14 +444,24 @@ function App() {
         });
       } else {
         const wordLower = match.text.toLowerCase();
-        let type: 'normal' | 'stop' | 'wasted' | 'duplicate' = 'normal';
+        const wordSingular = pluralize.singular(wordLower);
+        const isPlural = wordSingular !== wordLower;
+        let type: 'normal' | 'stop' | 'wasted' | 'duplicate' | 'plural' = 'normal';
 
         if (STOP_WORDS.has(wordLower)) {
           type = 'stop';
-        } else if (!keywordsSet.has(wordLower)) {
-          type = 'wasted';
-        } else if (duplicateKeywords.has(wordLower)) {
-          type = 'duplicate';
+        } else {
+          // Compare using singularized version
+          const isInKeywords = keywordsSet.has(wordSingular);
+          const isDuplicate = duplicateKeywords.has(wordSingular);
+
+          if (!isInKeywords) {
+            type = 'wasted';
+          } else if (isDuplicate) {
+            type = 'duplicate';
+          } else if (isPlural) {
+            type = 'plural';
+          }
         }
 
         analyses.push({
@@ -361,6 +473,63 @@ function App() {
       }
     });
 
+    // Detect multi-word sequences (2+ words separated by single spaces)
+    // Find sequences like: word space word (space word)*
+    const multiWordSequences: Array<{ startIndex: number; endIndex: number; text: string }> = [];
+
+    for (let i = 0; i < allMatches.length - 2; i++) {
+      const current = allMatches[i];
+      const next = allMatches[i + 1];
+      const afterNext = allMatches[i + 2];
+
+      // Check if we have: word + single space + word
+      if (!current.isWhitespace &&
+        next.isWhitespace &&
+        next.text === ' ' && // single space only
+        !afterNext.isWhitespace) {
+
+        // Found start of multi-word sequence
+        let sequenceStart = current.index;
+        let sequenceText = current.text;
+        let sequenceEnd = afterNext.index + afterNext.text.length;
+        sequenceText += ' ' + afterNext.text;
+
+        // Continue checking for more words in the sequence
+        let j = i + 3;
+        while (j < allMatches.length - 1) {
+          const checkSpace = allMatches[j];
+          const checkWord = allMatches[j + 1];
+
+          if (checkSpace.isWhitespace &&
+            checkSpace.text === ' ' &&
+            !checkWord.isWhitespace) {
+            sequenceEnd = checkWord.index + checkWord.text.length;
+            sequenceText += ' ' + checkWord.text;
+            j += 2;
+          } else {
+            break;
+          }
+        }
+
+        multiWordSequences.push({
+          startIndex: sequenceStart,
+          endIndex: sequenceEnd,
+          text: sequenceText,
+        });
+      }
+    }
+
+    // Mark all analyses that are part of multi-word sequences (only words, not whitespace)
+    multiWordSequences.forEach(sequence => {
+      analyses.forEach(analysis => {
+        if (analysis.startIndex >= sequence.startIndex &&
+          analysis.endIndex <= sequence.endIndex &&
+          analysis.type !== 'whitespace') {
+          analysis.type = 'multiword';
+        }
+      });
+    });
+
     return analyses;
   };
 
@@ -368,6 +537,8 @@ function App() {
   const metaAnalysis = useMemo((): MetaAnalysis => {
     const stopWords = new Set<string>();
     const wastedWords = new Set<string>();
+    const multiWordKeywords = new Set<string>();
+    const pluralKeywords = new Set<string>();
     let wastedCharCount = 0;
 
     // Analyze name and subtitle
@@ -385,10 +556,29 @@ function App() {
       });
     });
 
-    // Analyze keywords (includes whitespace)
+    // Analyze keywords (includes whitespace and multi-word detection)
     const keywordsAnalysis = analyzeKeywords(metaKeywords);
-    keywordsAnalysis.forEach(item => {
+
+    // Extract multi-word sequences from the analysis
+    let currentSequence: string[] = [];
+    keywordsAnalysis.forEach((item) => {
       const wordLower = item.word.toLowerCase();
+
+      if (item.type === 'multiword') {
+        if (item.word.match(/\s/)) {
+          // It's whitespace, skip
+        } else {
+          // It's a word in a multi-word sequence
+          currentSequence.push(item.word);
+        }
+      } else {
+        // End of sequence or not part of multi-word
+        if (currentSequence.length > 1) {
+          multiWordKeywords.add(currentSequence.join(' '));
+        }
+        currentSequence = [];
+      }
+
       if (item.type === 'stop') {
         stopWords.add(wordLower);
         wastedCharCount += item.word.length;
@@ -397,13 +587,22 @@ function App() {
         wastedCharCount += item.word.length;
       } else if (item.type === 'whitespace') {
         wastedCharCount += item.word.length;
+      } else if (item.type === 'plural') {
+        pluralKeywords.add(item.word);
       }
     });
+
+    // Handle case where multi-word sequence is at the end
+    if (currentSequence.length > 1) {
+      multiWordKeywords.add(currentSequence.join(' '));
+    }
 
     return {
       stopWords,
       wastedWords,
       duplicateKeywords,
+      multiWordKeywords,
+      pluralKeywords,
       wastedCharCount,
     };
   }, [metaName, metaSubtitle, metaKeywords, keywordsSet, duplicateKeywords]);
@@ -597,7 +796,7 @@ function App() {
               </div>
 
               {/* Analysis Box */}
-              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
                 <div className="p-4 border rounded bg-muted">
                   <h3 className="font-semibold mb-4">Analysis</h3>
 
@@ -624,8 +823,32 @@ function App() {
                   )}
 
                   {/* Analysis Section */}
-                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 || metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
                     <div className="space-y-3">
+                      {metaAnalysis.pluralKeywords.size > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-1">Plural Keywords (Apple treats plurals and non-plurals the same):</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(metaAnalysis.pluralKeywords).map((keyword, index) => (
+                              <Badge key={index} variant="outline" className="bg-blue-200">
+                                {keyword}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {metaAnalysis.multiWordKeywords.size > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-1">Multi-Word Keywords (should be single words):</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(metaAnalysis.multiWordKeywords).map((keyword, index) => (
+                              <Badge key={index} variant="outline" className="bg-red-800 text-white">
+                                {keyword}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {metaAnalysis.duplicateKeywords.size > 0 && (
                         <div>
                           <p className="text-sm font-medium mb-1">Duplicate Keywords:</p>
@@ -738,7 +961,12 @@ function App() {
               <div className="flex flex-wrap gap-2">
                 {keywords.length > 0 ? (
                   keywords.map((keyword, index) => (
-                    <Badge key={index}>{keyword}</Badge>
+                    <Badge
+                      key={index}
+                      className={satisfiedKeywords.has(keyword) ? 'bg-green-200' : ''}
+                    >
+                      {keyword}
+                    </Badge>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground">
