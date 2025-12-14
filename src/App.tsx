@@ -146,12 +146,70 @@ function PhraseItem({ phrase }: { phrase: Phrase }) {
   );
 }
 
+interface WordAnalysis {
+  word: string;
+  type: 'normal' | 'stop' | 'wasted' | 'whitespace';
+  startIndex: number;
+  endIndex: number;
+}
+
+interface MetaAnalysis {
+  stopWords: Set<string>;
+  wastedWords: Set<string>;
+  wastedCharCount: number;
+}
+
+function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] }) {
+  if (words.length === 0) {
+    return <span>{text}</span>;
+  }
+
+  const parts: React.ReactElement[] = [];
+  let lastIndex = 0;
+
+  words.forEach((word, index) => {
+    // Add text before this word
+    if (word.startIndex > lastIndex) {
+      parts.push(
+        <span key={`text-${index}`}>{text.substring(lastIndex, word.startIndex)}</span>
+      );
+    }
+
+    // Add the highlighted word
+    let bgColor = '';
+    if (word.type === 'stop') {
+      bgColor = 'bg-gray-200';
+    } else if (word.type === 'wasted') {
+      bgColor = 'bg-gray-400';
+    } else if (word.type === 'whitespace') {
+      bgColor = 'bg-red-200';
+    }
+    parts.push(
+      <span key={`word-${index}`} className={bgColor}>
+        {word.word}
+      </span>
+    );
+
+    lastIndex = word.endIndex;
+  });
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(<span key="text-end">{text.substring(lastIndex)}</span>);
+  }
+
+  return <span>{parts}</span>;
+}
+
 function App() {
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [phraseText, setPhraseText] = useState('');
   const [phraseScore, setPhraseScore] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedGameCategory, setSelectedGameCategory] = useState<string>('');
+  const [metaName, setMetaName] = useState<string>('');
+  const [metaSubtitle, setMetaSubtitle] = useState<string>('');
+  const [metaKeywords, setMetaKeywords] = useState<string>('');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -160,51 +218,165 @@ function App() {
     }),
   );
 
-  // Extract unique words from all phrases, category, and game category (excluding stop words)
+  // Extract unique words from all phrases (excluding stop words)
   const keywords = useMemo(() => {
     const allWords: string[] = [];
 
     // Extract words from phrases
     phrases.forEach(phrase => {
       phrase.text
+        .trim()
+        .replace(/[^a-zA-Z0-9]/g, ' ')
         .split(/\s+/)
-        .map(word => word.trim())
+        .map(word => word.toLowerCase())
         .filter(word => word.length > 0)
-        .filter(word => !STOP_WORDS.has(word.toLowerCase()))
+        .filter(word => !STOP_WORDS.has(word))
         .forEach(word => allWords.push(word));
     });
 
-    // Extract words from selected category
-    if (selectedCategory) {
-      selectedCategory
-        .split(/\s+/)
-        .map(word => word.trim())
-        .filter(word => word.length > 0)
-        .filter(word => !STOP_WORDS.has(word.toLowerCase()))
-        .forEach(word => allWords.push(word));
-    }
-
-    // Extract words from selected game category
-    if (selectedGameCategory) {
-      selectedGameCategory
-        .split(/\s+/)
-        .map(word => word.trim())
-        .filter(word => word.length > 0)
-        .filter(word => !STOP_WORDS.has(word.toLowerCase()))
-        .forEach(word => allWords.push(word));
-    }
-
     // Remove duplicates by converting to a Set and then back to an array
     return Array.from(new Set(allWords));
-  }, [phrases, selectedCategory, selectedGameCategory]);
+  }, [phrases]);
+
+  // Convert keywords to Set for faster lookup
+  const keywordsSet = useMemo(() => new Set(keywords), [keywords]);
+
+  // Analyze words in a text string
+  const analyzeText = (text: string): WordAnalysis[] => {
+    const words: WordAnalysis[] = [];
+    const regex = /\b\w+\b/g;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      const word = match[0];
+      const wordLower = word.toLowerCase();
+      let type: 'normal' | 'stop' | 'wasted' = 'normal';
+
+      if (STOP_WORDS.has(wordLower)) {
+        type = 'stop';
+      } else if (!keywordsSet.has(wordLower)) {
+        type = 'wasted';
+      }
+
+      words.push({
+        word: word,
+        type,
+        startIndex: match.index,
+        endIndex: match.index + word.length,
+      });
+    }
+
+    return words;
+  };
+
+  // Analyze keywords field with whitespace detection
+  const analyzeKeywords = (text: string): WordAnalysis[] => {
+    const analyses: WordAnalysis[] = [];
+
+    // Find all matches (words and whitespace) in order
+    const allMatches: Array<{ text: string; index: number; isWhitespace: boolean }> = [];
+
+    // Find all words
+    const wordRegex = /\b\w+\b/g;
+    let match;
+    while ((match = wordRegex.exec(text)) !== null) {
+      allMatches.push({
+        text: match[0],
+        index: match.index,
+        isWhitespace: false,
+      });
+    }
+
+    // Find all whitespace
+    const whitespaceRegex = /\s+/g;
+    while ((match = whitespaceRegex.exec(text)) !== null) {
+      allMatches.push({
+        text: match[0],
+        index: match.index,
+        isWhitespace: true,
+      });
+    }
+
+    // Sort by index
+    allMatches.sort((a, b) => a.index - b.index);
+
+    // Process matches and create analyses
+    allMatches.forEach(match => {
+      if (match.isWhitespace) {
+        analyses.push({
+          word: match.text,
+          type: 'whitespace',
+          startIndex: match.index,
+          endIndex: match.index + match.text.length,
+        });
+      } else {
+        const wordLower = match.text.toLowerCase();
+        let type: 'normal' | 'stop' | 'wasted' = 'normal';
+
+        if (STOP_WORDS.has(wordLower)) {
+          type = 'stop';
+        } else if (!keywordsSet.has(wordLower)) {
+          type = 'wasted';
+        }
+
+        analyses.push({
+          word: match.text,
+          type,
+          startIndex: match.index,
+          endIndex: match.index + match.text.length,
+        });
+      }
+    });
+
+    return analyses;
+  };
+
+  // Analyze all meta fields
+  const metaAnalysis = useMemo((): MetaAnalysis => {
+    const stopWords = new Set<string>();
+    const wastedWords = new Set<string>();
+    let wastedCharCount = 0;
+
+    // Analyze name and subtitle
+    [metaName, metaSubtitle].forEach(text => {
+      const words = analyzeText(text);
+      words.forEach(word => {
+        const wordLower = word.word.toLowerCase();
+        if (word.type === 'stop') {
+          stopWords.add(wordLower);
+          wastedCharCount += word.word.length;
+        } else if (word.type === 'wasted') {
+          wastedWords.add(wordLower);
+          wastedCharCount += word.word.length;
+        }
+      });
+    });
+
+    // Analyze keywords (includes whitespace)
+    const keywordsAnalysis = analyzeKeywords(metaKeywords);
+    keywordsAnalysis.forEach(item => {
+      const wordLower = item.word.toLowerCase();
+      if (item.type === 'stop') {
+        stopWords.add(wordLower);
+        wastedCharCount += item.word.length;
+      } else if (item.type === 'wasted') {
+        wastedWords.add(wordLower);
+        wastedCharCount += item.word.length;
+      } else if (item.type === 'whitespace') {
+        wastedCharCount += item.word.length;
+      }
+    });
+
+    return { stopWords, wastedWords, wastedCharCount };
+  }, [metaName, metaSubtitle, metaKeywords, keywordsSet]);
 
   // Generate unused phrase combinations using pluralization
   const unusedPhrases = useMemo(() => {
     if (phrases.length === 0) return [];
 
-    // Get existing phrase texts (normalized to lowercase for comparison)
+    // Get existing phrase texts (already normalized: lowercase, trimmed, single spaces)
     const existingPhrases = new Set(
-      phrases.map(phrase => phrase.text.toLowerCase().trim())
+      phrases.map(phrase => phrase.text)
     );
 
     const combinations: string[] = [];
@@ -230,7 +402,13 @@ function App() {
         for (let j = 0; j < numWords; j++) {
           const shouldPluralize = (i & (1 << j)) !== 0;
           if (shouldPluralize) {
-            variation.push(pluralize(words[j]));
+            const word = words[j];
+            // Only pluralize if the word ends with a-z
+            if (/[a-z]$/i.test(word)) {
+              variation.push(pluralize(word));
+            } else {
+              variation.push(word);
+            }
           } else {
             variation.push(words[j]);
           }
@@ -241,9 +419,10 @@ function App() {
     }
 
     // Filter out combinations that already exist in phrases
-    const unused = combinations.filter(
-      combo => !existingPhrases.has(combo.toLowerCase().trim())
-    );
+    // Normalize combinations: lowercase, trim, and remove extra whitespace
+    const unused = combinations
+      .map(combo => combo.trim().toLowerCase().replace(/\s+/g, ' '))
+      .filter(combo => !existingPhrases.has(combo));
 
     // Remove duplicates and limit to 100 results
     const uniqueUnused = Array.from(new Set(unused));
@@ -252,9 +431,15 @@ function App() {
 
   const handleAddPhrase = () => {
     if (phraseText.trim() && phraseScore.trim()) {
+      // Normalize phrase: lowercase, trim, and remove extra whitespace
+      const normalizedText = phraseText
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+
       const newPhrase: Phrase = {
         id: Date.now(),
-        text: phraseText.trim(),
+        text: normalizedText,
         score: phraseScore.trim(),
       };
       setPhrases([...phrases, newPhrase]);
@@ -336,18 +521,94 @@ function App() {
 
               <div className="space-y-2">
                 <Label htmlFor="metaTitle">Name</Label>
-                <Input id="metaTitle" defaultValue="" />
+                <Input
+                  id="metaTitle"
+                  value={metaName}
+                  onChange={e => setMetaName(e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="metaSubTitle">Subtitle</Label>
-                <Input id="metaSubTitle" defaultValue="" />
+                <Input
+                  id="metaSubTitle"
+                  value={metaSubtitle}
+                  onChange={e => setMetaSubtitle(e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="metaKeywords">Keywords</Label>
-                <Input id="metaKeywords" defaultValue="" />
+                <Input
+                  id="metaKeywords"
+                  value={metaKeywords}
+                  onChange={e => setMetaKeywords(e.target.value)}
+                />
               </div>
+
+              {/* Analysis Box */}
+              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+                <div className="p-4 border rounded bg-muted">
+                  <h3 className="font-semibold mb-4">Analysis</h3>
+
+                  {/* Preview Section */}
+                  {(metaName || metaSubtitle || metaKeywords) && (
+                    <div className="mb-4 space-y-2">
+                      <h4 className="text-sm font-medium mb-2">Preview:</h4>
+                      {metaName && (
+                        <div className="text-sm">
+                          <HighlightedText text={metaName} words={analyzeText(metaName)} />
+                        </div>
+                      )}
+                      {metaSubtitle && (
+                        <div className="text-sm">
+                          <HighlightedText text={metaSubtitle} words={analyzeText(metaSubtitle)} />
+                        </div>
+                      )}
+                      {metaKeywords && (
+                        <div className="text-sm">
+                          <HighlightedText text={metaKeywords} words={analyzeKeywords(metaKeywords)} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Analysis Section */}
+                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+                    <div className="space-y-3">
+                      {metaAnalysis.stopWords.size > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-1">Stop Words Found:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(metaAnalysis.stopWords).map((word, index) => (
+                              <Badge key={index} variant="outline" className="bg-gray-200">
+                                {word}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {metaAnalysis.wastedWords.size > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-1">Wasted Words (not in needed keywords):</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(metaAnalysis.wastedWords).map((word, index) => (
+                              <Badge key={index} variant="outline" className="bg-gray-400">
+                                {word}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {metaAnalysis.wastedCharCount > 0 && (
+                        <div>
+                          <p className="text-sm font-medium">Wasted Character Count: <span className="font-bold">{metaAnalysis.wastedCharCount}</span></p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Phrases */}
@@ -408,7 +669,7 @@ function App() {
             {/* Keywords */}
             <div>
               <h2>
-                Keywords
+                Keywords Needed in Meta
               </h2>
 
               {/* Items */}
