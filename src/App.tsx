@@ -1,3 +1,4 @@
+import pluralize from 'pluralize';
 import { useState, useMemo } from 'react';
 import {
   closestCenter,
@@ -27,6 +28,26 @@ interface Phrase {
   text: string;
   score: string;
 }
+
+const STOP_WORDS = new Set([
+  'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'app',
+  'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between',
+  'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does',
+  "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had',
+  "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her',
+  'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd",
+  "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself',
+  "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off',
+  'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over',
+  'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so',
+  'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves',
+  'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've",
+  'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't",
+  'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when',
+  "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's",
+  'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your',
+  'yours', 'yourself', 'yourselves',
+]);
 
 function PhraseItem({ phrase }: { phrase: Phrase }) {
   const {
@@ -83,17 +104,70 @@ function App() {
     }),
   );
 
-  // Extract unique words from all phrases
+  // Extract unique words from all phrases (excluding stop words)
   const keywords = useMemo(() => {
     const allWords = phrases.flatMap(phrase =>
       phrase.text
         .split(/\s+/)
         .map(word => word.trim())
-        .filter(word => word.length > 0),
+        .filter(word => word.length > 0)
+        .filter(word => !STOP_WORDS.has(word.toLowerCase())),
     );
 
     // Remove duplicates by converting to a Set and then back to an array
     return Array.from(new Set(allWords));
+  }, [phrases]);
+
+  // Generate unused phrase combinations using pluralization
+  const unusedPhrases = useMemo(() => {
+    if (phrases.length === 0) return [];
+
+    // Get existing phrase texts (normalized to lowercase for comparison)
+    const existingPhrases = new Set(
+      phrases.map(phrase => phrase.text.toLowerCase().trim())
+    );
+
+    const combinations: string[] = [];
+
+    // Go through each phrase and generate plural variations
+    for (const phrase of phrases) {
+      const words = phrase.text
+        .split(/\s+/)
+        .map(word => word.trim())
+        .filter(word => word.length > 0);
+
+      if (words.length === 0) continue;
+
+      // Generate all combinations where at least one word is pluralized
+      // For each word, we can either keep it or pluralize it
+      // We need at least one pluralization (exclude the case where all are kept)
+      const numWords = words.length;
+      const numCombinations = Math.pow(2, numWords);
+
+      for (let i = 1; i < numCombinations; i++) {
+        // Skip i=0 (all words kept, no pluralization)
+        const variation: string[] = [];
+        for (let j = 0; j < numWords; j++) {
+          const shouldPluralize = (i & (1 << j)) !== 0;
+          if (shouldPluralize) {
+            variation.push(pluralize(words[j]));
+          } else {
+            variation.push(words[j]);
+          }
+        }
+        const newPhrase = variation.join(' ');
+        combinations.push(newPhrase);
+      }
+    }
+
+    // Filter out combinations that already exist in phrases
+    const unused = combinations.filter(
+      combo => !existingPhrases.has(combo.toLowerCase().trim())
+    );
+
+    // Remove duplicates and limit to 100 results
+    const uniqueUnused = Array.from(new Set(unused));
+    return uniqueUnused.slice(0, 100);
   }, [phrases]);
 
   const handleAddPhrase = () => {
@@ -210,12 +284,13 @@ function App() {
 
           {/* Right col */}
           <div className="flex-1 flex flex-col gap-10">
+            {/* Keywords */}
             <div>
               <h2>
                 Keywords
               </h2>
 
-              {/* Keywords */}
+              {/* Items */}
               <div className="flex flex-wrap gap-2">
                 {keywords.length > 0 ? (
                   keywords.map((keyword, index) => (
@@ -229,8 +304,26 @@ function App() {
               </div>
             </div>
 
+            {/* Unused */}
             <div>
-              Unused Phrases
+              <h2>
+                Unused Phrases
+              </h2>
+            </div>
+
+            {/* Items */}
+            <div className="flex flex-wrap gap-2">
+              {unusedPhrases.length > 0 ? (
+                unusedPhrases.map((phrase, index) => (
+                  <Badge key={index} variant="outline">
+                    {phrase}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No unused phrases
+                </p>
+              )}
             </div>
           </div>
         </div>
