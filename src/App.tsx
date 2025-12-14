@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GripVertical, AlertTriangle, Star, Shield, ExternalLink, Pencil } from 'lucide-react';
+import { GripVertical, AlertTriangle, Star, Shield, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
@@ -131,7 +131,7 @@ const GAME_CATEGORIES = [
   'Word',
 ];
 
-function PhraseItem({ phrase, onEdit }: { phrase: Phrase; onEdit: () => void }) {
+function PhraseItem({ phrase, onEdit, onDelete }: { phrase: Phrase; onEdit: () => void; onDelete: () => void }) {
   const {
     attributes,
     isDragging,
@@ -188,6 +188,15 @@ function PhraseItem({ phrase, onEdit }: { phrase: Phrase; onEdit: () => void }) 
           className="text-muted-foreground hover:text-foreground"
         >
           <Pencil className="h-4 w-4" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Trash2 className="h-4 w-4" />
         </button>
         <a
           href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(phrase.text)}`}
@@ -1028,6 +1037,10 @@ function App() {
     setEditingPhrase(null);
   };
 
+  const handleDeletePhrase = (phraseId: number) => {
+    setPhrases((prevPhrases) => prevPhrases.filter((p) => p.id !== phraseId));
+  };
+
   return (
     <>
       <div className="w-full min-h-screen bg-background">
@@ -1287,6 +1300,7 @@ function App() {
                         key={phrase.id}
                         phrase={phrase}
                         onEdit={() => handleEditPhrase(phrase)}
+                        onDelete={() => handleDeletePhrase(phrase.id)}
                       />
                     ))}
                   </SortableContext>
