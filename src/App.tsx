@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   closestCenter,
   DndContext,
@@ -16,6 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,6 +83,19 @@ function App() {
     }),
   );
 
+  // Extract unique words from all phrases
+  const keywords = useMemo(() => {
+    const allWords = phrases.flatMap(phrase =>
+      phrase.text
+        .split(/\s+/)
+        .map(word => word.trim())
+        .filter(word => word.length > 0),
+    );
+
+    // Remove duplicates by converting to a Set and then back to an array
+    return Array.from(new Set(allWords));
+  }, [phrases]);
+
   const handleAddPhrase = () => {
     if (phraseText.trim() && phraseScore.trim()) {
       const newPhrase: Phrase = {
@@ -121,6 +135,7 @@ function App() {
         </div>
 
         <div className="w-full flex gap-4 px-4">
+          {/* Left col */}
           <div className="flex-1 flex flex-col gap-10">
             {/* Meta */}
             <div className="flex flex-col gap-4">
@@ -193,9 +208,25 @@ function App() {
             </div>
           </div>
 
-          <div className="flex-1">
+          {/* Right col */}
+          <div className="flex-1 flex flex-col gap-10">
             <div>
-              Keywords
+              <h2>
+                Keywords
+              </h2>
+
+              {/* Keywords */}
+              <div className="flex flex-wrap gap-2">
+                {keywords.length > 0 ? (
+                  keywords.map((keyword, index) => (
+                    <Badge key={index}>{keyword}</Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No keywords yet
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
