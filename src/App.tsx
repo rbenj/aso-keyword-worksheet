@@ -1,6 +1,6 @@
 import pluralize from 'pluralize';
 import * as React from 'react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   closestCenter,
   DndContext,
@@ -51,6 +51,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
+import { db, type AppState } from '@/lib/db';
 
 interface Phrase {
   id: number;
@@ -424,6 +425,7 @@ function App() {
   const [metaKeywords, setMetaKeywords] = useState<string>('');
   const [editingPhrase, setEditingPhrase] = useState<Phrase | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -431,6 +433,53 @@ function App() {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  // Load state from Dexie on mount
+  useEffect(() => {
+    const loadState = async () => {
+      try {
+        const savedState = await db.appState.get(1);
+        if (savedState) {
+          setPhrases(savedState.phrases || []);
+          setSelectedCategory(savedState.selectedCategory || '');
+          setSelectedGameCategory(savedState.selectedGameCategory || '');
+          setMetaName(savedState.metaName || '');
+          setMetaSubtitle(savedState.metaSubtitle || '');
+          setMetaKeywords(savedState.metaKeywords || '');
+        }
+      } catch (error) {
+        console.error('Failed to load state from database:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadState();
+  }, []);
+
+  // Persist state to Dexie whenever it changes
+  useEffect(() => {
+    if (isLoading) return; // Don't save during initial load
+
+    const saveState = async () => {
+      try {
+        const state: AppState = {
+          id: 1,
+          phrases,
+          selectedCategory,
+          selectedGameCategory,
+          metaName,
+          metaSubtitle,
+          metaKeywords,
+        };
+        await db.appState.put(state, 1);
+      } catch (error) {
+        console.error('Failed to save state to database:', error);
+      }
+    };
+
+    saveState();
+  }, [phrases, selectedCategory, selectedGameCategory, metaName, metaSubtitle, metaKeywords, isLoading]);
 
   // Extract unique words from all phrases (excluding stop words) and convert to singular
   const keywords = useMemo(() => {
