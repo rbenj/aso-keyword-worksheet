@@ -148,7 +148,7 @@ function PhraseItem({ phrase }: { phrase: Phrase }) {
 
 interface WordAnalysis {
   word: string;
-  type: 'normal' | 'stop' | 'wasted' | 'whitespace';
+  type: 'normal' | 'stop' | 'wasted' | 'whitespace' | 'duplicate';
   startIndex: number;
   endIndex: number;
 }
@@ -156,6 +156,7 @@ interface WordAnalysis {
 interface MetaAnalysis {
   stopWords: Set<string>;
   wastedWords: Set<string>;
+  duplicateKeywords: Set<string>;
   wastedCharCount: number;
 }
 
@@ -183,6 +184,8 @@ function HighlightedText({ text, words }: { text: string; words: WordAnalysis[] 
       bgColor = 'bg-gray-400';
     } else if (word.type === 'whitespace') {
       bgColor = 'bg-red-200';
+    } else if (word.type === 'duplicate') {
+      bgColor = 'bg-purple-200';
     }
     parts.push(
       <span key={`word-${index}`} className={bgColor}>
@@ -241,6 +244,32 @@ function App() {
   // Convert keywords to Set for faster lookup
   const keywordsSet = useMemo(() => new Set(keywords), [keywords]);
 
+  // Find duplicate needed keywords across all meta fields
+  const duplicateKeywords = useMemo(() => {
+    const keywordCounts = new Map<string, number>();
+    const allTexts = [metaName, metaSubtitle, metaKeywords].join(' ');
+
+    // Count occurrences of needed keywords
+    const regex = /\b\w+\b/g;
+    let match;
+    while ((match = regex.exec(allTexts)) !== null) {
+      const wordLower = match[0].toLowerCase();
+      if (keywordsSet.has(wordLower) && !STOP_WORDS.has(wordLower)) {
+        keywordCounts.set(wordLower, (keywordCounts.get(wordLower) || 0) + 1);
+      }
+    }
+
+    // Return set of keywords that appear more than once
+    const duplicates = new Set<string>();
+    keywordCounts.forEach((count, keyword) => {
+      if (count > 1) {
+        duplicates.add(keyword);
+      }
+    });
+
+    return duplicates;
+  }, [metaName, metaSubtitle, metaKeywords, keywordsSet]);
+
   // Analyze words in a text string
   const analyzeText = (text: string): WordAnalysis[] => {
     const words: WordAnalysis[] = [];
@@ -250,12 +279,14 @@ function App() {
     while ((match = regex.exec(text)) !== null) {
       const word = match[0];
       const wordLower = word.toLowerCase();
-      let type: 'normal' | 'stop' | 'wasted' = 'normal';
+      let type: 'normal' | 'stop' | 'wasted' | 'duplicate' = 'normal';
 
       if (STOP_WORDS.has(wordLower)) {
         type = 'stop';
       } else if (!keywordsSet.has(wordLower)) {
         type = 'wasted';
+      } else if (duplicateKeywords.has(wordLower)) {
+        type = 'duplicate';
       }
 
       words.push({
@@ -311,12 +342,14 @@ function App() {
         });
       } else {
         const wordLower = match.text.toLowerCase();
-        let type: 'normal' | 'stop' | 'wasted' = 'normal';
+        let type: 'normal' | 'stop' | 'wasted' | 'duplicate' = 'normal';
 
         if (STOP_WORDS.has(wordLower)) {
           type = 'stop';
         } else if (!keywordsSet.has(wordLower)) {
           type = 'wasted';
+        } else if (duplicateKeywords.has(wordLower)) {
+          type = 'duplicate';
         }
 
         analyses.push({
@@ -367,8 +400,13 @@ function App() {
       }
     });
 
-    return { stopWords, wastedWords, wastedCharCount };
-  }, [metaName, metaSubtitle, metaKeywords, keywordsSet]);
+    return {
+      stopWords,
+      wastedWords,
+      duplicateKeywords,
+      wastedCharCount,
+    };
+  }, [metaName, metaSubtitle, metaKeywords, keywordsSet, duplicateKeywords]);
 
   // Generate unused phrase combinations using pluralization
   const unusedPhrases = useMemo(() => {
@@ -525,7 +563,11 @@ function App() {
                   id="metaTitle"
                   value={metaName}
                   onChange={e => setMetaName(e.target.value)}
+                  maxLength={30}
                 />
+                <div className="text-xs text-muted-foreground text-right">
+                  {metaName.length}/30
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -534,7 +576,11 @@ function App() {
                   id="metaSubTitle"
                   value={metaSubtitle}
                   onChange={e => setMetaSubtitle(e.target.value)}
+                  maxLength={30}
                 />
+                <div className="text-xs text-muted-foreground text-right">
+                  {metaSubtitle.length}/30
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -543,11 +589,15 @@ function App() {
                   id="metaKeywords"
                   value={metaKeywords}
                   onChange={e => setMetaKeywords(e.target.value)}
+                  maxLength={100}
                 />
+                <div className="text-xs text-muted-foreground text-right">
+                  {metaKeywords.length}/100
+                </div>
               </div>
 
               {/* Analysis Box */}
-              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+              {(metaName || metaSubtitle || metaKeywords || metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
                 <div className="p-4 border rounded bg-muted">
                   <h3 className="font-semibold mb-4">Analysis</h3>
 
@@ -574,8 +624,20 @@ function App() {
                   )}
 
                   {/* Analysis Section */}
-                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
+                  {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 || metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.wastedCharCount > 0) && (
                     <div className="space-y-3">
+                      {metaAnalysis.duplicateKeywords.size > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-1">Duplicate Keywords:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {Array.from(metaAnalysis.duplicateKeywords).map((word, index) => (
+                              <Badge key={index} variant="outline" className="bg-purple-200">
+                                {word}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {metaAnalysis.stopWords.size > 0 && (
                         <div>
                           <p className="text-sm font-medium mb-1">Stop Words Found:</p>
