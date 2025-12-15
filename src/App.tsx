@@ -174,12 +174,16 @@ function App() {
                     satisfiedKeywords={satisfiedKeywords}
                   />
 
-                  <h3 className="mt-6">Keyword Strength</h3>
+                  {satisfiedKeywords.size > 0 && (
+                    <>
+                      <h3 className="mt-6">Keyword Strength</h3>
 
-                  <RankChart
-                    keywords={keywords}
-                    ownedKeywordsOrdered={ownedKeywordsOrdered}
-                  />
+                      <RankChart
+                        keywords={keywords}
+                        ownedKeywordsOrdered={ownedKeywordsOrdered}
+                      />
+                    </>
+                  )}
                 </>
               ) : (
                 <DetailBox>
@@ -235,7 +239,7 @@ function App() {
         open={isEditDialogOpen}
         searchQuery={editingSearchQuery}
       />
-    </div>
+    </div >
   );
 }
 
