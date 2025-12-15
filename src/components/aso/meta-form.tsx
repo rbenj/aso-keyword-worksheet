@@ -105,7 +105,7 @@ export function MetaForm({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="metaKeywords">Keyword List (single words, comma seperated, no spaces)</Label>
+          <Label htmlFor="metaKeywords">Keyword List</Label>
           <span className="text-xs text-muted-foreground">
             {metaKeywords.length}/100
           </span>

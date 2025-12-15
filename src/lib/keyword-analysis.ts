@@ -528,8 +528,7 @@ export function computeMetaAnalysis(
     wastedWords,
     duplicateKeywords,
     multiWordKeywords,
-    pluralKeywords,
-    wastedCharCount,
+    pluralKeywords
   };
 }
 
