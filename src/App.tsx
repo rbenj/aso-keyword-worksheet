@@ -163,17 +163,10 @@ function App() {
                   keywords={keywords}
                   satisfiedKeywords={satisfiedKeywords}
                 />
-              </CardContent>
-            </Card>
+                <h3 className="text-lg font-medium mt-6">
+                  Keyword Strength
+                </h3>
 
-            <Card className="border-none bg-transparent shadow-none">
-              <CardHeader>
-                <CardTitle className="text-2xl">Keyword Efficiency</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                  Keywords lose power top to bottom and left to right.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
                 <RankChart
                   keywords={keywords}
                   ownedKeywordsOrdered={ownedKeywordsOrdered}
