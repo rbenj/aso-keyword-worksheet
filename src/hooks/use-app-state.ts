@@ -166,7 +166,7 @@ export function useAppState() {
         competitiveness: 85,
       },
       {
-        id: Date.now() + 6,
+        id: Date.now() + 5,
         text: 'difficult capcom games',
         popularity: 7,
         competitiveness: 32,
@@ -178,7 +178,7 @@ export function useAppState() {
         competitiveness: 14,
       },
       {
-        id: Date.now() + 5,
+        id: Date.now() + 7,
         text: '8-bit side scroller',
         popularity: 5,
         competitiveness: 8,
