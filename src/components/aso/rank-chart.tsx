@@ -46,8 +46,10 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
         layout="vertical"
         maxBarSize={30}
       >
-        <Bar dataKey="actual" stackId="a" fill="var(--chart-2)" layout="vertical" />
-        <Bar dataKey="expected" stackId="a" fill="var(--chart-1)" layout="vertical" />
+        <Bar dataKey="actual" stackId="a" fill="var(--chart-2)"
+layout="vertical" />
+        <Bar dataKey="expected" stackId="a" fill="var(--chart-1)"
+layout="vertical" />
         <ChartLegend content={<ChartLegendContent />} />
         <YAxis
           dataKey="keyword"
@@ -57,7 +59,7 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
           tickMargin={10}
           width={80}
           axisLine={false}
-          tickFormatter={(value) => truncate(value, 10)}
+          tickFormatter={value => truncate(value, 10)}
         />
         <XAxis dataKey="actual" type="number" hide />
       </BarChart>

@@ -1,4 +1,4 @@
-import { Ban, Check } from "lucide-react"
+import { Ban, Check } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 
@@ -14,7 +14,7 @@ export function KeywordsDisplay({ keywords, satisfiedKeywords }: KeywordsDisplay
 
   return (
     <div className="flex flex-wrap gap-2">
-      {keywords.map((keyword) => (
+      {keywords.map(keyword => (
         <Badge
           className="text-sm"
           key={keyword}

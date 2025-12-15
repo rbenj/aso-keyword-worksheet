@@ -26,7 +26,7 @@ export function WarningWordList({ label, words, note }: WarningWordListProps) {
 
       {words && words.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2 pb-1">
-          {words.map((word) => (
+          {words.map(word => (
             <Badge
               className="text-sm bg-primary/20 text-primary border-primary"
               key={word}

@@ -66,8 +66,8 @@ export function useKeywordAnalysis({
 
   // Find duplicate needed keywords across all meta fields
   const duplicateKeywords = useMemo(() => {
-    return computeDuplicateKeywords(ownedKeywords, keywordsSet);
-  }, [ownedKeywords, keywordsSet]);
+    return computeDuplicateKeywords(ownedKeywords);
+  }, [ownedKeywords]);
 
   // Find which keywords are satisfied (appear in meta fields)
   const satisfiedKeywords = useMemo(() => {

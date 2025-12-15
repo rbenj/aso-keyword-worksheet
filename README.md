@@ -8,7 +8,7 @@ All data is stored locally in your browser. This app is not affiliated with, end
 
 ## Demo
 
-Find it here: https://rbenj.github.io/aso-keyword-tool/
+Find it here: https://rbenj.github.io/aso-keyword-worksheet/
 
 ## Setup
 

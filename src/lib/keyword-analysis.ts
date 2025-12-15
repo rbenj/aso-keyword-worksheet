@@ -255,7 +255,6 @@ export function computeSatisfiedKeywords(
  */
 export function computeDuplicateKeywords(
   ownedKeywords: Map<string, number>,
-  keywordsSet: Set<string>,
 ): Set<string> {
   const duplicates = new Set<string>();
 
@@ -472,7 +471,6 @@ export function computeMetaAnalysis(
   const wastedWords = new Set<string>();
   const multiWordKeywords = new Set<string>();
   const pluralKeywords = new Set<string>();
-  let wastedCharCount = 0;
 
   // Analyze name and subtitle
   [metaName, metaSubtitle].forEach((text) => {
@@ -481,10 +479,8 @@ export function computeMetaAnalysis(
       const wordLower = word.word.toLowerCase();
       if (word.type === 'stop') {
         stopWords.add(wordLower);
-        wastedCharCount += word.word.length;
       } else if (word.type === 'wasted') {
         wastedWords.add(wordLower);
-        wastedCharCount += word.word.length;
       }
     });
   });
@@ -514,12 +510,8 @@ export function computeMetaAnalysis(
 
     if (item.type === 'stop') {
       stopWords.add(wordLower);
-      wastedCharCount += item.word.length;
     } else if (item.type === 'wasted') {
       wastedWords.add(wordLower);
-      wastedCharCount += item.word.length;
-    } else if (item.type === 'whitespace') {
-      wastedCharCount += item.word.length;
     } else if (item.type === 'plural') {
       pluralKeywords.add(item.word);
     }
@@ -535,7 +527,7 @@ export function computeMetaAnalysis(
     wastedWords,
     duplicateKeywords,
     multiWordKeywords,
-    pluralKeywords
+    pluralKeywords,
   };
 }
 

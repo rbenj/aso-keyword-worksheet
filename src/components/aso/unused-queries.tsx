@@ -11,7 +11,7 @@ export function UnusedQueries({ unusedSearchQueries }: UnusedQueriesProps) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      {queries.map((query) => (
+      {queries.map(query => (
         <Badge
           className="text-sm"
           key={query}
