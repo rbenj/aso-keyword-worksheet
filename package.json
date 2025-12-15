@@ -1,23 +1,21 @@
 {
-  "name": "rapidprotokit",
+  "name": "aso-keyword-worksheet",
   "version": "0.0.1",
-  "description": "Opinionated boilerplate and suite of components for quickly creating React based prototypes.",
+  "description": "Worksheet to assist with App Store Optimization (ASO) keyword research.",
   "author": "Richard Benjamin",
   "license": "MIT",
   "keywords": [
-    "react",
-    "typescript",
-    "vite",
-    "ui",
-    "prototyping"
+    "aso",
+    "keyword",
+    "research"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/rbenj/rapidprotokit.git"
+    "url": "https://github.com/rbenj/aso-keyword-worksheet.git"
   },
-  "homepage": "https://github.com/rbenj/rapidprotokit#readme",
+  "homepage": "https://github.com/rbenj/aso-keyword-worksheet#readme",
   "bugs": {
-    "url": "https://github.com/rbenj/rapidprotokit/issues"
+    "url": "https://github.com/rbenj/aso-keyword-worksheet/issues"
   },
   "type": "module",
   "scripts": {

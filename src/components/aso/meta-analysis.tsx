@@ -32,11 +32,7 @@ export function MetaAnalysisComponent({
   }
 
   return (
-    <div className="mt-10">
-      <h2>Analysis</h2>
-
-      <p>Use these signals to optimize your app's meta.</p>
-
+    <div>
       {/* Preview Section */}
       {(metaName || metaSubtitle || metaKeywords) && (
         <div className="mb-4 space-y-2 mt-4">
