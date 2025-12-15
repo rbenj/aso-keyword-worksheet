@@ -15,12 +15,12 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
     const filteredOwnedKeywords = ownedKeywordsOrdered.filter(k => keywords.includes(k));
 
     const actual = filteredOwnedKeywords.indexOf(keyword) !== -1 ? keywords.length - filteredOwnedKeywords.indexOf(keyword) : 0;
-    const ideal = keywords.length - i;
+    const expected = keywords.length - i;
 
     return {
       keyword: keyword,
       actual: actual,
-      ideal: Math.max(0, ideal - actual),
+      expected: Math.max(0, expected - actual),
     };
   });
 
@@ -30,8 +30,8 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
     actual: {
       label: 'Actual',
     },
-    ideal: {
-      label: 'Ideal',
+    expected: {
+      label: 'Expected',
     },
   } satisfies ChartConfig;
 
@@ -47,7 +47,7 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
         maxBarSize={30}
       >
         <Bar dataKey="actual" stackId="a" fill="var(--chart-2)" layout="vertical" />
-        <Bar dataKey="ideal" stackId="a" fill="var(--chart-1)" layout="vertical" />
+        <Bar dataKey="expected" stackId="a" fill="var(--chart-1)" layout="vertical" />
         <ChartLegend content={<ChartLegendContent />} />
         <YAxis
           dataKey="keyword"

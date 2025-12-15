@@ -1,3 +1,5 @@
+import { Ban, Check } from "lucide-react"
+
 import { Badge } from '@/components/ui/badge';
 
 interface KeywordsDisplayProps {
@@ -6,24 +8,26 @@ interface KeywordsDisplayProps {
 }
 
 export function KeywordsDisplay({ keywords, satisfiedKeywords }: KeywordsDisplayProps) {
+  if (keywords.length <= 0) {
+    return null;
+  }
+
   return (
-    <div>
-      {keywords.length > 0 ? (
-        <div className="flex gap-2">
-          {keywords.map((keyword, index) => (
-            <Badge
-              key={index}
-              className={satisfiedKeywords.has(keyword) ? 'bg-green-200' : ''}
-            >
-              {keyword}
-            </Badge>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-gray-300 p-2">
-          Add search queries to determine target keywords.
-        </div>
-      )}
+    <div className="flex flex-wrap gap-2">
+      {keywords.map((keyword) => (
+        <Badge
+          className="text-sm"
+          key={keyword}
+          variant={satisfiedKeywords.has(keyword) ? 'default' : 'outline'}
+        >
+          {satisfiedKeywords.has(keyword) ? (
+            <Check />
+          ) : (
+            <Ban />
+          )}
+          {keyword}
+        </Badge>
+      ))}
     </div>
   );
 }

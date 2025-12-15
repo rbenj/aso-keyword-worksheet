@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { DetailBox } from './detail-box';
 
 interface WarningWordListProps {
   label: string;
@@ -12,7 +13,7 @@ export function WarningWordList({ label, words, note }: WarningWordListProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-dashed border-gray-300 p-2">
+    <DetailBox>
       <h3 className="text-sm font-bold">
         {label}
       </h3>
@@ -24,14 +25,18 @@ export function WarningWordList({ label, words, note }: WarningWordListProps) {
       )}
 
       {words && words.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2 mt-2 pb-1">
           {words.map((word) => (
-            <Badge key={word} variant="outline" className="bg-gray-200">
+            <Badge
+              className="text-sm bg-primary/20 text-primary border-primary"
+              key={word}
+              variant="outline"
+            >
               {word}
             </Badge>
           ))}
         </div>
       )}
-    </div>
+    </DetailBox>
   );
 }

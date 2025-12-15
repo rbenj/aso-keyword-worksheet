@@ -1,7 +1,8 @@
 import { useAppState } from '@/hooks/use-app-state';
 import { useKeywordAnalysis } from '@/hooks/use-keyword-analysis';
 
-import { Card, CardPhantom, CardContent, CardDescription, CardHeader, CardTitle, CardH2 } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 import { Nav } from '@/components/aso/nav';
 import { Disclaimer } from '@/components/aso/disclaimer';
@@ -13,6 +14,8 @@ import { KeywordsDisplay } from '@/components/aso/keywords-display';
 import { MetaAnalysisComponent } from '@/components/aso/meta-analysis';
 import { RankChart } from '@/components/aso/rank-chart';
 import { UnusedQueries } from '@/components/aso/unused-queries';
+import { DetailBox } from '@/components/aso/detail-box';
+import { MockCard } from '@/components/aso/mock-card';
 
 function App() {
   const {
@@ -66,7 +69,7 @@ function App() {
   });
 
   return (
-    <div className="w-full min-h-screen bg-background">
+    <div className="w-full min-h-screen bg-background pb-16">
       <header className="w-full flex flex-col">
         <Disclaimer />
 
@@ -112,6 +115,8 @@ function App() {
                 searchQueryText={searchQueryText}
               />
 
+              <Separator className="mt-4 mb-8" />
+
               <SearchQueryList
                 onDelete={handleDeleteSearchQuery}
                 onDragEnd={handleDragEnd}
@@ -147,10 +152,10 @@ function App() {
           </Card>
         </div>
 
-        <div className="flex-1 flex flex-col p-4 rounded-2xl bg-secondary">
-          <CardPhantom>
+        <div className="flex-1 flex flex-col gap-8 px-2 py-8 rounded-2xl bg-secondary">
+          <MockCard>
             <CardHeader>
-              <CardH2>Target Keywords</CardH2>
+              <h2>Target Keywords</h2>
 
               <CardDescription>
                 These are the keywords that should be included in your app's meta. They are ordered to match the priority of your search queries. Only singular versions are listed (Apple does not differentiate between singular and plural words).
@@ -158,29 +163,34 @@ function App() {
             </CardHeader>
 
             <CardContent>
-              <KeywordsDisplay
-                keywords={keywords}
-                satisfiedKeywords={satisfiedKeywords}
-              />
+              {keywords.length > 0 ? (
+                <>
+                  <KeywordsDisplay
+                    keywords={keywords}
+                    satisfiedKeywords={satisfiedKeywords}
+                  />
 
-              <CardDescription className="mt-6">
-                <strong>Keyword Strength</strong><br />
-                Place prioritized keywords early in app meta fields.
-              </CardDescription>
+                  <h3 className="mt-6">Keyword Strength</h3>
 
-              <RankChart
-                keywords={keywords}
-                ownedKeywordsOrdered={ownedKeywordsOrdered}
-              />
+                  <RankChart
+                    keywords={keywords}
+                    ownedKeywordsOrdered={ownedKeywordsOrdered}
+                  />
+                </>
+              ) : (
+                <DetailBox>
+                  Add search queries to determine target keywords.
+                </DetailBox>
+              )}
             </CardContent>
-          </CardPhantom>
+          </MockCard>
 
-          <CardPhantom>
+          <MockCard>
             <CardHeader>
-              <CardH2>Potential Issues</CardH2>
+              <h2>Potential Issues</h2>
 
               <CardDescription>
-                Investigate issues listed here. Your app meta may not be fully optimized.
+                Investigate app meta optimization issues listed here.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,11 +199,11 @@ function App() {
                 metaAnalysis={metaAnalysis}
               />
             </CardContent>
-          </CardPhantom>
+          </MockCard>
 
-          <CardPhantom>
+          <MockCard>
             <CardHeader>
-              <CardH2>Alternate Search Queries</CardH2>
+              <h2>Alternate Search Queries</h2>
 
               <CardDescription>
                 A slight variation of a search query may have a very different popularity-to-competitiveness ratio. Check variations in word order and pluralization. Some possibilities are listed here.
@@ -205,7 +215,7 @@ function App() {
                 unusedSearchQueries={unusedSearchQueries}
               />
             </CardContent>
-          </CardPhantom>
+          </MockCard>
         </div>
       </div>
 

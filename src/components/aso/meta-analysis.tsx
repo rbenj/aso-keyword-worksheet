@@ -1,5 +1,6 @@
 import { WarningWordList } from './warning-word-list';
 import type { MetaAnalysis } from '@/types/aso';
+import { DetailBox } from './detail-box';
 
 interface MetaAnalysisProps {
   keywordListValue: string;
@@ -8,7 +9,7 @@ interface MetaAnalysisProps {
 
 export function MetaAnalysisComponent({ keywordListValue, metaAnalysis }: MetaAnalysisProps) {
   // Check that keywordListValue matches the pattern: [A-Za-z0-9],[A-Za-z0-9] repeated (no spaces, each keyword alphanumeric, separated by commas)
-  const isFormatBad = !/^([A-Za-z0-9]+)(,[A-Za-z0-9]+)*$/.test(keywordListValue.trim());
+  const isFormatBad = keywordListValue.length > 0 && !/^([A-Za-z0-9]+)(,[A-Za-z0-9]+)*$/.test(keywordListValue.trim());
   const hasWhiteSpace = /\s/.test(keywordListValue);
   const hasCapitalLetters = /[A-Z]/.test(keywordListValue);
 
@@ -76,9 +77,9 @@ export function MetaAnalysisComponent({ keywordListValue, metaAnalysis }: MetaAn
       )}
 
       {!hasIssues && (
-        <p className="text-sm text-gray-500">
+        <DetailBox>
           No issues found. 👍
-        </p>
+        </DetailBox>
       )}
     </div>
   );

@@ -6,32 +6,28 @@ interface UnusedQueriesProps {
 }
 
 export function UnusedQueries({ unusedSearchQueries }: UnusedQueriesProps) {
+  // Ensure no dupes
+  const queries = Array.from(new Set(unusedSearchQueries));
+
   return (
     <div className="flex flex-wrap gap-2">
-      {unusedSearchQueries.length > 0 ? (
-        unusedSearchQueries.map((searchQuery, index) => (
-          <Badge
-            key={index}
-            variant="outline"
-            className="cursor-pointer hover:bg-muted"
-            asChild
+      {queries.map((query) => (
+        <Badge
+          className="text-sm"
+          key={query}
+          variant="outline"
+        >
+          <a
+            href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(query)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground "
           >
-            <a
-              href={`https://appfigures.com/reports/keyword-inspector?keyword=${encodeURIComponent(searchQuery)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1"
-            >
-              {searchQuery}
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </Badge>
-        ))
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          No unused search queries
-        </p>
-      )}
+            {query}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </Badge>
+      ))}
     </div>
   );
 }

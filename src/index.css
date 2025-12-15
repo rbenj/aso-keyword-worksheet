@@ -123,10 +123,10 @@
 }
 
 @layer base {
-  a {
+  p a {
     @apply underline underline-offset-2 text-primary;
   }
-  a:hover {
+  p a:hover {
     @apply text-primary/50;
   }
 
@@ -134,9 +134,9 @@
     @apply text-4xl font-extrabold tracking-tight text-balance;
   }
   h2 {
-    @apply text-3xl font-semibold tracking-tight text-balance;
+    @apply text-2xl font-semibold tracking-tight text-balance;
   }
   h3 {
-    @apply text-xl font-semibold tracking-tight text-balance;
+    @apply font-semibold;
   }
 }
