@@ -49,7 +49,7 @@ function App() {
   const {
     keywords,
     satisfiedKeywords,
-    rankChartData,
+    ownedKeywordsOrdered,
     metaAnalysis,
     unusedSearchQueries,
     analyzeTextFn,
@@ -175,8 +175,8 @@ function App() {
               </CardHeader>
               <CardContent>
                 <RankChart
-                  rankChartData={rankChartData}
                   keywords={keywords}
+                  ownedKeywordsOrdered={ownedKeywordsOrdered}
                 />
               </CardContent>
             </Card>
