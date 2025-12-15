@@ -29,7 +29,7 @@ export function SearchQueryItem({ searchQuery, onEdit, onDelete }: SearchQueryIt
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-2 border rounded bg-background"
+      className="flex flex-col justify-between gap-2 p-2 border rounded bg-background sm:flex-row sm:items-center md:flex-col md:items-start lg:flex-row lg:items-center"
     >
       <div className="flex items-center gap-2">
         <button

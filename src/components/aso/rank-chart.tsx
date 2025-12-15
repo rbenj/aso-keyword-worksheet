@@ -39,7 +39,7 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
     value.length > max ? `${value.slice(0, max - 3)}…` : value;
 
   return (
-    <ChartContainer config={chartConfig} className="w-full">
+    <ChartContainer config={chartConfig} className="w-full max-w-lg">
       <BarChart
         accessibilityLayer
         data={chartData}

@@ -56,12 +56,6 @@ export function SearchQueryList({
           ))}
         </SortableContext>
       </DndContext>
-
-      {searchQueries.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Add a search query to get started
-        </p>
-      )}
     </div>
   );
 }

@@ -115,14 +115,18 @@ function App() {
                 searchQueryText={searchQueryText}
               />
 
-              <Separator className="mt-4 mb-8" />
+              {searchQueries.length > 0 && (
+                <Separator className="mt-4 mb-8" />
+              )}
 
-              <SearchQueryList
-                onDelete={handleDeleteSearchQuery}
-                onDragEnd={handleDragEnd}
-                onEdit={handleEditSearchQuery}
-                searchQueries={searchQueries}
-              />
+              {searchQueries.length > 0 && (
+                <SearchQueryList
+                  onDelete={handleDeleteSearchQuery}
+                  onDragEnd={handleDragEnd}
+                  onEdit={handleEditSearchQuery}
+                  searchQueries={searchQueries}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -211,9 +215,15 @@ function App() {
             </CardHeader>
 
             <CardContent>
-              <UnusedQueries
-                unusedSearchQueries={unusedSearchQueries}
-              />
+              {searchQueries.length > 0 ? (
+                <UnusedQueries
+                  unusedSearchQueries={unusedSearchQueries}
+                />
+              ) : (
+                <DetailBox>
+                  Add search queries to see alternatives.
+                </DetailBox>
+              )}
             </CardContent>
           </MockCard>
         </div>
