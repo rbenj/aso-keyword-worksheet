@@ -15,6 +15,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: '/aso-keyword-worksheet/',
   server: {
     port: 5173,
     host: true,
