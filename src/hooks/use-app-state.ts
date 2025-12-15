@@ -142,48 +142,54 @@ export function useAppState() {
     const demoSearchQueries: SearchQuery[] = [
       {
         id: Date.now() + 1,
-        text: 'weather app',
-        popularity: 95,
-        competitiveness: 85,
+        text: 'mega man',
+        popularity: 42,
+        competitiveness: 48,
       },
       {
         id: Date.now() + 2,
-        text: 'weather forecast',
-        popularity: 88,
-        competitiveness: 75,
+        text: 'mega man game',
+        popularity: 36,
+        competitiveness: 54,
       },
       {
         id: Date.now() + 3,
-        text: 'weather radar',
-        popularity: 72,
-        competitiveness: 60,
+        text: 'old nintendo games',
+        popularity: 20,
+        competitiveness: 34,
       },
       {
         id: Date.now() + 4,
-        text: 'hourly weather',
-        popularity: 65,
-        competitiveness: 50,
-      },
-      {
-        id: Date.now() + 5,
-        text: 'local weather',
-        popularity: 80,
-        competitiveness: 70,
+        text: 'classic video games',
+        popularity: 58,
+        competitiveness: 85,
       },
       {
         id: Date.now() + 6,
-        text: 'weather widget',
-        popularity: 55,
-        competitiveness: 45,
+        text: 'difficult capcom games',
+        popularity: 7,
+        competitiveness: 32,
+      },
+      {
+        id: Date.now() + 6,
+        text: 'rock man',
+        popularity: 6,
+        competitiveness: 14,
+      },
+      {
+        id: Date.now() + 5,
+        text: '8-bit side scroller',
+        popularity: 5,
+        competitiveness: 8,
       },
     ];
 
     setSearchQueries(demoSearchQueries);
-    setSelectedCategory('Weather');
-    setSelectedGameCategory('');
-    setMetaName('WeatherPro');
-    setMetaSubtitle('Forecast & Radar');
-    setMetaKeywords('weather,forecast,radar,hourly,local,temperature,conditions');
+    setSelectedCategory('Games');
+    setSelectedGameCategory('Action');
+    setMetaName('Mega Man 2: 8-Bit Classic');
+    setMetaSubtitle('Retro side scroller action');
+    setMetaKeywords('video,old,retro,nintendo,rock,nostaligic,challenging,pew,pixel');
   };
 
   return {

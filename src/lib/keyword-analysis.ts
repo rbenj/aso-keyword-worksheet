@@ -16,7 +16,7 @@ export function extractKeywordsFromSearchQueries(searchQueries: SearchQuery[]): 
       .replace(/[^a-zA-Z0-9]/g, ' ')
       .split(/\s+/)
       .map(word => word.toLowerCase())
-      .filter(word => word.length > 0)
+      .filter(word => word.length > 1)
       .filter(word => !STOP_WORDS.has(word))
       .map(word => pluralize.singular(word)) // Convert to singular
       .forEach(word => allWords.push(word));
@@ -259,9 +259,10 @@ export function computeDuplicateKeywords(
 ): Set<string> {
   const duplicates = new Set<string>();
 
-  // Check owned keywords that are also in needed keywords and appear more than once
+  // Check owned keywords that appear more than once (across all meta fields)
+  // This includes duplicates between subtitle and keywords field, etc.
   ownedKeywords.forEach((count, keyword) => {
-    if (keywordsSet.has(keyword) && count > 1) {
+    if (count > 1) {
       duplicates.add(keyword);
     }
   });
@@ -289,6 +290,9 @@ export function analyzeText(
 
     if (STOP_WORDS.has(wordLower)) {
       type = 'stop';
+    } else if (word.length < 2) {
+      // Skip words less than 2 characters - don't mark as wasted
+      type = 'normal';
     } else {
       // Compare using singularized version
       const isInKeywords = keywordsSet.has(wordSingular);
@@ -366,6 +370,9 @@ export function analyzeKeywords(
 
       if (STOP_WORDS.has(wordLower)) {
         type = 'stop';
+      } else if (match.text.length < 2) {
+        // Skip words less than 2 characters - don't mark as wasted
+        type = 'normal';
       } else {
         // Compare using singularized version
         const isInKeywords = keywordsSet.has(wordSingular);

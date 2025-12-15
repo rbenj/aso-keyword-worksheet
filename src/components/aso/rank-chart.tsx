@@ -52,6 +52,7 @@ export function RankChart({ keywords, ownedKeywordsOrdered }: RankChartProps) {
         <YAxis
           dataKey="keyword"
           type="category"
+          interval={0}
           tickLine={false}
           tickMargin={10}
           width={80}
