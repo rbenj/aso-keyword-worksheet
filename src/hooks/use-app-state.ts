@@ -189,7 +189,7 @@ export function useAppState() {
     setSelectedGameCategory('Action');
     setMetaName('Mega Man 2: 8-Bit Classic');
     setMetaSubtitle('Retro side scroller action');
-    setMetaKeywords('video,old,retro,nintendo,rock,nostaligic,challenging,pew,pixel');
+    setMetaKeywords('video,old,retro,nintendo,rock,nostalgic,challenging,pew,pixel');
   };
 
   return {

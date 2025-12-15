@@ -6,6 +6,10 @@ This worksheet is intended to be used in conjunction with Appfigures while doing
 
 All data is stored locally in your browser. This app is not affiliated with, endorsed by, or associated with Appfigures or Apple. This tool is provided for informational and academic purposes only and does not constitute advice of any kind. The functionality and algorithms are based on assumptions that may be inaccurate.
 
+## Demo
+
+Find it here: https://rbenj.github.io/aso-keyword-tool/
+
 ## Setup
 
 Bare bones Vite... `npm install`, then `npm run dev`. Default Vite port... http://localhost:5173/. Prefer to run in a [devcontainer](https://code.visualstudio.com/docs/devcontainers/containers), configuration is included.
