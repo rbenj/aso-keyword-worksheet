@@ -11,5 +11,4 @@ export interface MetaAnalysis {
   duplicateKeywords: Set<string>;
   multiWordKeywords: Set<string>;
   pluralKeywords: Set<string>;
-  wastedCharCount: number;
 }

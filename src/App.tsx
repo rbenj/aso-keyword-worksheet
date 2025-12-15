@@ -168,25 +168,6 @@ function App() {
 
             <Card className="border-none bg-transparent shadow-none">
               <CardHeader>
-                <CardTitle className="text-2xl">Analysis</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground">
-                  Use these signals to optimize your app's meta.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MetaAnalysisComponent
-                  metaName={metaName}
-                  metaSubtitle={metaSubtitle}
-                  metaKeywords={metaKeywords}
-                  metaAnalysis={metaAnalysis}
-                  analyzeText={analyzeTextFn}
-                  analyzeKeywords={analyzeKeywordsFn}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="border-none bg-transparent shadow-none">
-              <CardHeader>
                 <CardTitle className="text-2xl">Keyword Efficiency</CardTitle>
                 <CardDescription className="text-sm text-muted-foreground">
                   Keywords lose power top to bottom and left to right.
@@ -196,6 +177,21 @@ function App() {
                 <RankChart
                   rankChartData={rankChartData}
                   keywords={keywords}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="border-none bg-transparent shadow-none">
+              <CardHeader>
+                <CardTitle className="text-2xl">Potential Issues</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                  Your meta data may not be fully optimized.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MetaAnalysisComponent
+                  keywordListValue={metaKeywords}
+                  metaAnalysis={metaAnalysis}
                 />
               </CardContent>
             </Card>

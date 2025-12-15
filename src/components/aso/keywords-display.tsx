@@ -7,20 +7,22 @@ interface KeywordsDisplayProps {
 
 export function KeywordsDisplay({ keywords, satisfiedKeywords }: KeywordsDisplayProps) {
   return (
-    <div className="flex flex-wrap gap-2 border border-gray-200 rounded-md p-4">
+    <div>
       {keywords.length > 0 ? (
-        keywords.map((keyword, index) => (
-          <Badge
-            key={index}
-            className={satisfiedKeywords.has(keyword) ? 'bg-green-200' : ''}
-          >
-            {keyword}
-          </Badge>
-        ))
+        <div className="flex gap-2">
+          {keywords.map((keyword, index) => (
+            <Badge
+              key={index}
+              className={satisfiedKeywords.has(keyword) ? 'bg-green-200' : ''}
+            >
+              {keyword}
+            </Badge>
+          ))}
+        </div>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          Start by entering a search query
-        </p>
+        <div className="flex flex-col gap-2 rounded-lg border border-dashed border-gray-300 p-2">
+          Add search queries to determine target keywords.
+        </div>
       )}
     </div>
   );

@@ -1,142 +1,85 @@
-import { Badge } from '@/components/ui/badge';
-import { AlertTriangle } from 'lucide-react';
-import { HighlightedText } from './highlighted-text';
+import { WarningWordList } from './warning-word-list';
 import type { MetaAnalysis } from '@/types/aso';
-import type { WordAnalysis } from '@/types/aso';
 
 interface MetaAnalysisProps {
-  metaName: string;
-  metaSubtitle: string;
-  metaKeywords: string;
+  keywordListValue: string;
   metaAnalysis: MetaAnalysis;
-  analyzeText: (text: string) => WordAnalysis[];
-  analyzeKeywords: (text: string) => WordAnalysis[];
 }
 
-export function MetaAnalysisComponent({
-  metaName,
-  metaSubtitle,
-  metaKeywords,
-  metaAnalysis,
-  analyzeText,
-  analyzeKeywords,
-}: MetaAnalysisProps) {
-  const hasAnalysis = metaName || metaSubtitle || metaKeywords ||
-    metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 ||
-    metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 ||
-    metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0 ||
-    /[A-Z]/.test(metaKeywords);
+export function MetaAnalysisComponent({ keywordListValue, metaAnalysis }: MetaAnalysisProps) {
+  // Check that keywordListValue matches the pattern: [A-Za-z0-9],[A-Za-z0-9] repeated (no spaces, each keyword alphanumeric, separated by commas)
+  const isFormatBad = !/^([A-Za-z0-9]+)(,[A-Za-z0-9]+)*$/.test(keywordListValue.trim());
+  const hasWhiteSpace = /\s/.test(keywordListValue);
+  const hasCapitalLetters = /[A-Z]/.test(keywordListValue);
 
-  if (!hasAnalysis) {
-    return null;
-  }
+  const hasIssues =
+    metaAnalysis.wastedWords.size > 0 ||
+    metaAnalysis.duplicateKeywords.size > 0 ||
+    metaAnalysis.stopWords.size > 0 ||
+    metaAnalysis.multiWordKeywords.size > 0 ||
+    metaAnalysis.pluralKeywords.size > 0 ||
+    isFormatBad ||
+    hasWhiteSpace ||
+    hasCapitalLetters;
 
   return (
-    <div>
-      {/* Preview Section */}
-      {(metaName || metaSubtitle || metaKeywords) && (
-        <div className="mb-4 space-y-2 mt-4">
-          <h4 className="text-sm font-medium mb-2">Preview:</h4>
-          {metaName && (
-            <div className="text-sm">
-              <HighlightedText text={metaName} words={analyzeText(metaName)} />
-            </div>
-          )}
-          {metaSubtitle && (
-            <div className="text-sm">
-              <HighlightedText text={metaSubtitle} words={analyzeText(metaSubtitle)} />
-            </div>
-          )}
-          {metaKeywords && (
-            <div className="text-sm">
-              <HighlightedText text={metaKeywords} words={analyzeKeywords(metaKeywords)} />
-            </div>
-          )}
-        </div>
+    <div className="flex flex-col gap-2">
+      <WarningWordList
+        label="Duplicated Keywords"
+        words={Array.from(metaAnalysis.duplicateKeywords)}
+        note="Duplicated keywords are ignored, and take up character count."
+      />
+
+      <WarningWordList
+        label="Untargeted Keywords"
+        words={Array.from(metaAnalysis.wastedWords)}
+        note="These keywords do not appear in your seach queries. Are they neccesary?"
+      />
+
+      <WarningWordList
+        label="Stop Words"
+        words={Array.from(metaAnalysis.stopWords)}
+        note="These words are ignored. Are they neccesary?"
+      />
+
+      <WarningWordList
+        label="Multi-Word Keywords"
+        words={Array.from(metaAnalysis.multiWordKeywords)}
+        note="Only use single, comma separated words in the keyword list."
+      />
+
+      <WarningWordList
+        label="Plural Keywords"
+        words={Array.from(metaAnalysis.pluralKeywords)}
+        note="Only use non plural forms of words in the keyword list."
+      />
+
+      {isFormatBad && (
+        <WarningWordList
+          label="Keyword List Format"
+          note="Keywords list should only be comma seperated alphanumeric words."
+        />
       )}
 
-      {/* Analysis Section */}
-      {(metaAnalysis.stopWords.size > 0 || metaAnalysis.wastedWords.size > 0 ||
-        metaAnalysis.duplicateKeywords.size > 0 || metaAnalysis.multiWordKeywords.size > 0 ||
-        metaAnalysis.pluralKeywords.size > 0 || metaAnalysis.wastedCharCount > 0 ||
-        /[A-Z]/.test(metaKeywords)) && (
-          <div className="space-y-3 mt-4">
-            {/[A-Z]/.test(metaKeywords) && (
-              <div className="flex items-center gap-2 p-2 bg-yellow-100 border border-yellow-300 rounded">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                <p className="text-sm text-yellow-800">Keywords field contains uppercase characters. Apple keywords should be lowercase.</p>
-              </div>
-            )}
-            {metaAnalysis.pluralKeywords.size > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-1">Plural Keywords (Apple treats plurals and non-plurals the same):</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(metaAnalysis.pluralKeywords).map((keyword, index) => (
-                    <Badge key={index} variant="outline" className="bg-blue-200">
-                      {keyword}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {metaAnalysis.multiWordKeywords.size > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-1">Multi-Word Keywords (should be single words):</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(metaAnalysis.multiWordKeywords).map((keyword, index) => (
-                    <Badge key={index} variant="outline" className="bg-red-800 text-white">
-                      {keyword}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {metaAnalysis.duplicateKeywords.size > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-1">Duplicate Keywords:</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(metaAnalysis.duplicateKeywords).map((word, index) => (
-                    <Badge key={index} variant="outline" className="bg-purple-200">
-                      {word}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {metaAnalysis.stopWords.size > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-1">Stop Words Found:</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(metaAnalysis.stopWords).map((word, index) => (
-                    <Badge key={index} variant="outline" className="bg-gray-200">
-                      {word}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {metaAnalysis.wastedWords.size > 0 && (
-              <div>
-                <p className="text-sm font-medium mb-1">Wasted Words (not in needed keywords):</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(metaAnalysis.wastedWords).map((word, index) => (
-                    <Badge key={index} variant="outline" className="bg-gray-400">
-                      {word}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {metaAnalysis.wastedCharCount > 0 && (
-              <div>
-                <p className="text-sm font-medium">
-                  Wasted Character Count:
-                  <span className="font-bold">{metaAnalysis.wastedCharCount}</span>
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+      {hasCapitalLetters && (
+        <WarningWordList
+          label="Excess Whitespace"
+          note="There should be no whitespace at all, alphanumeric"
+        />
+      )}
+
+      {hasCapitalLetters && (
+        <WarningWordList
+          label="Capital Letters"
+          note="Keywords list should only contain lowercase letters."
+        />
+      )}
+
+      {!hasIssues && (
+        <p className="text-sm text-gray-500">
+          No issues found. 👍
+        </p>
+      )}
     </div>
   );
 }
