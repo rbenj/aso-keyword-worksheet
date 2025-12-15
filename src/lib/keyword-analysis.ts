@@ -462,7 +462,6 @@ export function computeMetaAnalysis(
   metaName: string,
   metaSubtitle: string,
   metaKeywords: string,
-  keywordsSet: Set<string>,
   duplicateKeywords: Set<string>,
   analyzeTextFn: (text: string) => WordAnalysis[],
   analyzeKeywordsFn: (text: string) => WordAnalysis[],

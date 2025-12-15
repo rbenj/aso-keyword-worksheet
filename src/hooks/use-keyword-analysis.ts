@@ -94,12 +94,11 @@ export function useKeywordAnalysis({
       metaName,
       metaSubtitle,
       metaKeywords,
-      keywordsSet,
       duplicateKeywords,
       analyzeTextFn,
       analyzeKeywordsFn,
     );
-  }, [metaName, metaSubtitle, metaKeywords, keywordsSet, duplicateKeywords, analyzeTextFn, analyzeKeywordsFn]);
+  }, [metaName, metaSubtitle, metaKeywords, duplicateKeywords, analyzeTextFn, analyzeKeywordsFn]);
 
   // Generate unused searchQuery combinations using pluralization
   const unusedSearchQueries = useMemo(() => {

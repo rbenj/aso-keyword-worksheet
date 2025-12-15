@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { arrayMove, type DragEndEvent } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
+import { type DragEndEvent } from '@dnd-kit/core';
 import { db, type AppState, type SearchQuery } from '@/lib/db';
 
 export function useAppState() {
