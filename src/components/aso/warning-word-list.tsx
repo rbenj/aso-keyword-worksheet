@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge';
-import { DetailBox } from './detail-box';
+import { Badges, type BadgeDef } from '@/components/Badges';
+import { ActionBox } from '@/components/ActionBox';
 
 interface WarningWordListProps {
   label: string;
@@ -8,12 +8,18 @@ interface WarningWordListProps {
 }
 
 export function WarningWordList({ label, words, note }: WarningWordListProps) {
-  if (words && words.length === 0) {
+  if (!words || words.length === 0) {
     return null;
   }
 
+  const badges: BadgeDef[] = words.map(word => ({
+    isOn: true,
+    isSecondary: true,
+    label: word,
+  }));
+
   return (
-    <DetailBox>
+    <ActionBox>
       <h3 className="text-sm font-bold">
         {label}
       </h3>
@@ -24,19 +30,10 @@ export function WarningWordList({ label, words, note }: WarningWordListProps) {
         </p>
       )}
 
-      {words && words.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2 pb-1">
-          {words.map(word => (
-            <Badge
-              className="text-sm bg-primary/20 text-primary border-primary"
-              key={word}
-              variant="outline"
-            >
-              {word}
-            </Badge>
-          ))}
-        </div>
-      )}
-    </DetailBox>
+      <Badges
+        badges={badges}
+        className="mt-2 pb-1"
+      />
+    </ActionBox>
   );
 }

@@ -8,8 +8,8 @@ import { STOP_WORDS } from '@/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-import { Nav } from '@/components/aso/nav';
-import { Disclaimer } from '@/components/aso/disclaimer';
+import { Nav } from '@/components/Nav';
+import { Disclaimer } from '@/components/Disclaimer';
 import { MetaForm } from '@/components/aso/meta-form';
 import { SearchQueryForm } from '@/components/aso/search-query-form';
 import { SearchQueryList } from '@/components/aso/search-query-list';
@@ -18,8 +18,8 @@ import { KeywordsDisplay } from '@/components/aso/keywords-display';
 import { MetaAnalysisComponent } from '@/components/aso/meta-analysis';
 import { RankChart } from '@/components/aso/rank-chart';
 import { UnusedQueries } from '@/components/aso/unused-queries';
-import { DetailBox } from '@/components/aso/detail-box';
-import { MockCard } from '@/components/aso/mock-card';
+import { ActionBox } from '@/components/ActionBox';
+import { MockCard } from '@/components/MockCard';
 
 function App() {
   const {
@@ -195,9 +195,9 @@ function App() {
                   )}
                 </>
               ) : (
-                <DetailBox>
+                <ActionBox>
                   Add search queries to determine target keywords.
-                </DetailBox>
+                </ActionBox>
               )}
             </CardContent>
           </MockCard>
@@ -233,9 +233,9 @@ function App() {
                   unusedSearchQueries={unusedSearchQueries}
                 />
               ) : (
-                <DetailBox>
+                <ActionBox>
                   Add search queries to see alternatives.
-                </DetailBox>
+                </ActionBox>
               )}
             </CardContent>
           </MockCard>

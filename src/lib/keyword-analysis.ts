@@ -4,25 +4,24 @@ import type { WordAnalysis, MetaAnalysis } from '@/types';
 import type { SearchQuery } from '@/lib/db';
 
 /**
- * Extract unique keywords from search queries (excluding stop words) and convert to singular
+ * Extract unique keywords from search queries.
  */
 export function extractKeywordsFromSearchQueries(searchQueries: SearchQuery[]): string[] {
   const allWords: string[] = [];
 
-  // Extract words from searchQueries
-  searchQueries.forEach((searchQuery) => {
-    searchQuery.text
+  searchQueries.forEach((query: SearchQuery) => {
+    query.text
       .trim()
-      .replace(/[^a-zA-Z0-9]/g, ' ')
-      .split(/\s+/)
-      .map(word => word.toLowerCase())
-      .filter(word => word.length > 1)
-      .filter(word => !STOP_WORDS.has(word))
+      .replace(/[^a-zA-Z0-9]/g, ' ') // Only alphanumeric chars and spaces
+      .split(/\s+/) // Split on spaces
+      .map(word => word.toLowerCase()) // Lowercase words
+      .filter(word => word.length > 1) // Remove single character words
+      .filter(word => !STOP_WORDS.has(word)) // Remove stop words
       .map(word => pluralize.singular(word)) // Convert to singular
       .forEach(word => allWords.push(word));
   });
 
-  // Remove duplicates by converting to a Set and then back to an array
+  // Remove dupes via array->set->array
   return Array.from(new Set(allWords));
 }
 

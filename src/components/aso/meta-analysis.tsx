@@ -1,6 +1,6 @@
 import { WarningWordList } from './warning-word-list';
 import type { MetaAnalysis } from '@/types';
-import { DetailBox } from './detail-box';
+import { ActionBox } from '@/components/ActionBox';
 
 interface MetaAnalysisProps {
   keywordListValue: string;
@@ -77,9 +77,9 @@ export function MetaAnalysisComponent({ keywordListValue, metaAnalysis }: MetaAn
       )}
 
       {!hasIssues && (
-        <DetailBox>
+        <ActionBox>
           No issues found. 👍
-        </DetailBox>
+        </ActionBox>
       )}
     </div>
   );

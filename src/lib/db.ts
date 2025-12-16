@@ -8,7 +8,7 @@ export interface SearchQuery {
 }
 
 export interface AppState {
-  id?: number; // Primary key (we'll use a single record with id=1)
+  id?: number;
   searchQueries: SearchQuery[];
   selectedCategory: string;
   selectedGameCategory: string;
