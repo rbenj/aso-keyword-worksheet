@@ -541,9 +541,10 @@ export function generateUnusedSearchQueries(searchQueries: SearchQuery[]): strin
     searchQueries.map(searchQuery => searchQuery.text),
   );
 
+  const targetSingulars = ['game', 'app'];
   const combinations: string[] = [];
 
-  // Go through each searchQuery and generate plural variations
+  // Loop over search queries
   for (const searchQuery of searchQueries) {
     const words = searchQuery.text
       .split(/\s+/)
@@ -552,41 +553,64 @@ export function generateUnusedSearchQueries(searchQueries: SearchQuery[]): strin
 
     if (words.length === 0) { continue; }
 
-    // Generate all combinations where at least one word is pluralized
-    // For each word, we can either keep it or pluralize it
-    // We need at least one pluralization (exclude the case where all are kept)
-    const numWords = words.length;
-    const numCombinations = Math.pow(2, numWords);
-
-    for (let i = 1; i < numCombinations; i++) {
-      // Skip i=0 (all words kept, no pluralization)
-      const variation: string[] = [];
-      for (let j = 0; j < numWords; j++) {
-        const shouldPluralize = (i & (1 << j)) !== 0;
-        if (shouldPluralize) {
-          const word = words[j];
-          // Only pluralize if the word ends with a-z
-          if (/[a-z]$/i.test(word)) {
-            variation.push(pluralize(word));
-          } else {
-            variation.push(word);
-          }
-        } else {
-          variation.push(words[j]);
-        }
+    // Collect words that could be pluralized or singularized
+    const wordsToTransform: number[] = [];
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const wordSingular = pluralize.singular(word.toLowerCase());
+      
+      // Check if word singularizes to any word in targetSingulars
+      if (targetSingulars.includes(wordSingular)) {
+        wordsToTransform.push(i);
       }
-      const newSearchQuery = variation.join(' ');
-      combinations.push(newSearchQuery);
+      
+      // Always include the last word
+      if (i === words.length - 1) {
+        wordsToTransform.push(i);
+      }
+    }
+
+    // Remove duplicates from wordsToTransform
+    const uniqueIndices = Array.from(new Set(wordsToTransform));
+
+    // Generate a new alternate query for each word by pluralizing or singularizing it
+    for (const index of uniqueIndices) {
+      const word = words[index];
+      const wordLower = word.toLowerCase();
+      const wordSingular = pluralize.singular(wordLower);
+      const wordPlural = pluralize(wordLower);
+      
+      // Create variations: one with pluralized word, one with singularized word
+      const variations: string[] = [];
+      
+      // Only add plural if it's different from original
+      if (wordPlural !== wordLower) {
+        const pluralVariation = [...words];
+        pluralVariation[index] = wordPlural;
+        variations.push(pluralVariation.join(' '));
+      }
+      
+      // Only add singular if it's different from original
+      if (wordSingular !== wordLower) {
+        const singularVariation = [...words];
+        singularVariation[index] = wordSingular;
+        variations.push(singularVariation.join(' '));
+      }
+      
+      combinations.push(...variations);
     }
   }
 
-  // Filter out combinations that already exist in searchQueries
   // Normalize combinations: lowercase, trim, and remove extra whitespace
-  const unused = combinations
+  const normalized = combinations
     .map(combo => combo.trim().toLowerCase().replace(/\s+/g, ' '))
-    .filter(combo => !existingSearchQueries.has(combo));
+    .filter(combo => combo.length > 0);
 
-  // Remove duplicates and limit to 100 results
+  // Filter out combinations that already exist in searchQueries
+  const unused = normalized.filter(combo => !existingSearchQueries.has(combo));
+
+  // Remove duplicates
   const uniqueUnused = Array.from(new Set(unused));
   return uniqueUnused.slice(0, 100);
 }
