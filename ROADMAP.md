@@ -1,7 +1,6 @@
 # Roadmap
 
 ## Features
-- 🔥 Rework alternate query algo with hardcoded common cases
 - 🔥 General component cleanup
 - 🔥 Add step numbers to cards
 - 🔥 Use triple dot instead of a slew of controls for search queries

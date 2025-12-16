@@ -56,7 +56,7 @@ export function EditSearchQueryDialog({
       // Reset tracking when dialog closes
       initializedSearchQueryId.current = null;
     }
-  }, [open, searchQuery?.id]);
+  }, [open, searchQuery?.id, searchQuery]);
 
   const handleSave = () => {
     if (!searchQuery || !text.trim()) { return; }
