@@ -1,8 +1,5 @@
 # Roadmap
 
-## Bugs
-- 🔥 Edit modal fields are managed incorrectly
-
 ## Features
 - 🔥 Rework alternate query algo with hardcoded common cases
 - 🔥 General component cleanup
@@ -11,7 +8,7 @@
 - 🔥 Use shadcn Form
 - 🔥 Require name, category, and game category if applicable in App Meta
 - 🔥 Move formatting requirements for Keyword List to the field instead of issues
-- 🔥 Skip right to a demo if no application data flag found
+- 🔥 Hook to Appfigures API (not sure popularity scores will be returned for arbitrary keywords)
 - 🔥 Move demo and data controls behind a menu item named Demo
 - 🔥 Add good and bad demo sets
 - 🔥 Support multiple worksheets

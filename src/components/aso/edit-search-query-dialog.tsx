@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,15 +39,24 @@ export function EditSearchQueryDialog({
   const [text, setText] = useState('');
   const [popularity, setPopularity] = useState('');
   const [competitiveness, setCompetitiveness] = useState('');
+  const initializedSearchQueryId = useRef<number | null>(null);
 
-  // Update form when searchQuery changes
+  // Only initialize form when dialog opens with a new/different search query
   useEffect(() => {
-    if (searchQuery) {
-      setText(searchQuery.text);
-      setPopularity(searchQuery.popularity?.toString() || '');
-      setCompetitiveness(searchQuery.competitiveness?.toString() || '');
+    if (open && searchQuery) {
+      // Only update if this is a different search query (different ID) or dialog just opened
+      if (searchQuery.id !== initializedSearchQueryId.current) {
+        setText(searchQuery.text);
+        setPopularity(searchQuery.popularity?.toString() || '');
+        setCompetitiveness(searchQuery.competitiveness?.toString() || '');
+        initializedSearchQueryId.current = searchQuery.id;
+      }
     }
-  }, [searchQuery]);
+    if (!open) {
+      // Reset tracking when dialog closes
+      initializedSearchQueryId.current = null;
+    }
+  }, [open, searchQuery?.id]);
 
   const handleSave = () => {
     if (!searchQuery || !text.trim()) { return; }
@@ -77,15 +86,17 @@ export function EditSearchQueryDialog({
     onOpenChange(false);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSave();
+  };
+
   if (!searchQuery) { return null; }
 
-  const SearchQueryForm = ({ className }: { className?: string }) => (
+  const formContent = (
     <form
-      className={cn('grid items-start gap-4', className)}
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleSave();
-      }}
+      className={cn('grid items-start gap-4')}
+      onSubmit={handleSubmit}
     >
       <div className="grid gap-2">
         <Label htmlFor="edit-search-query-text">Search Query Text</Label>
@@ -134,7 +145,7 @@ export function EditSearchQueryDialog({
               Make changes to your search query here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
-          <SearchQueryForm />
+          {formContent}
         </DialogContent>
       </Dialog>
     );
@@ -149,7 +160,9 @@ export function EditSearchQueryDialog({
             Make changes to your search query here. Click save when you're done.
           </DrawerDescription>
         </DrawerHeader>
-        <SearchQueryForm className="px-4" />
+        <div className="px-4">
+          {formContent}
+        </div>
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>

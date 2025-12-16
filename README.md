@@ -6,6 +6,12 @@ This worksheet is intended to be used in conjunction with Appfigures while doing
 
 Find it here: https://rbenj.github.io/aso-keyword-worksheet/
 
+## Roadmap
+
+See [ROADMAP.md](./ROADMAP.md) doc here.
+
+Would be way cooler with API access to popularity scores.
+
 ## Disclaimer
 
 All data is stored locally in your browser. This app is not affiliated with, endorsed by, or associated with Appfigures or Apple. This tool is provided for informational and academic purposes only and does not constitute advice of any kind. The functionality and algorithms are based on assumptions that may be inaccurate.
