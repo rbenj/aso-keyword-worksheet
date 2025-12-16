@@ -1,5 +1,5 @@
 import { WarningWordList } from './warning-word-list';
-import type { MetaAnalysis } from '@/types/aso';
+import type { MetaAnalysis } from '@/types';
 import { DetailBox } from './detail-box';
 
 interface MetaAnalysisProps {

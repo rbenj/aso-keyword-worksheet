@@ -1,6 +1,6 @@
 import pluralize from 'pluralize';
-import { STOP_WORDS } from '@/constants/aso';
-import type { WordAnalysis, MetaAnalysis } from '@/types/aso';
+import { STOP_WORDS } from '@/constants';
+import type { WordAnalysis, MetaAnalysis } from '@/types';
 import type { SearchQuery } from '@/lib/db';
 
 /**
@@ -555,16 +555,16 @@ export function generateUnusedSearchQueries(searchQueries: SearchQuery[]): strin
 
     // Collect words that could be pluralized or singularized
     const wordsToTransform: number[] = [];
-    
+
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
       const wordSingular = pluralize.singular(word.toLowerCase());
-      
+
       // Check if word singularizes to any word in targetSingulars
       if (targetSingulars.includes(wordSingular)) {
         wordsToTransform.push(i);
       }
-      
+
       // Always include the last word
       if (i === words.length - 1) {
         wordsToTransform.push(i);
@@ -580,24 +580,24 @@ export function generateUnusedSearchQueries(searchQueries: SearchQuery[]): strin
       const wordLower = word.toLowerCase();
       const wordSingular = pluralize.singular(wordLower);
       const wordPlural = pluralize(wordLower);
-      
+
       // Create variations: one with pluralized word, one with singularized word
       const variations: string[] = [];
-      
+
       // Only add plural if it's different from original
       if (wordPlural !== wordLower) {
         const pluralVariation = [...words];
         pluralVariation[index] = wordPlural;
         variations.push(pluralVariation.join(' '));
       }
-      
+
       // Only add singular if it's different from original
       if (wordSingular !== wordLower) {
         const singularVariation = [...words];
         singularVariation[index] = wordSingular;
         variations.push(singularVariation.join(' '));
       }
-      
+
       combinations.push(...variations);
     }
   }

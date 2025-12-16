@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CATEGORIES, GAME_CATEGORIES } from '@/constants/aso';
+import { CATEGORIES, GAME_CATEGORIES } from '@/constants';
 
 interface MetaFormProps {
   metaName: string;

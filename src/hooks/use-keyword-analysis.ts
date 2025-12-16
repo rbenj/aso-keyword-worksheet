@@ -12,7 +12,7 @@ import {
   generateUnusedSearchQueries,
 } from '@/lib/keyword-analysis';
 import type { SearchQuery } from '@/lib/db';
-import type { MetaAnalysis } from '@/types/aso';
+import type { MetaAnalysis } from '@/types';
 
 interface UseKeywordAnalysisParams {
   searchQueries: SearchQuery[];

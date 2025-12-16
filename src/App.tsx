@@ -1,5 +1,9 @@
+import pluralize from 'pluralize';
+
 import { useAppState } from '@/hooks/use-app-state';
 import { useKeywordAnalysis } from '@/hooks/use-keyword-analysis';
+
+import { STOP_WORDS } from '@/constants';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -66,6 +70,11 @@ function App() {
     metaKeywords,
     selectedCategory,
     selectedGameCategory,
+  });
+
+  // Prevent pluralization of stop words, keep in mind this could affect other use cases for pluralize
+  STOP_WORDS.forEach((word) => {
+    pluralize.addUncountableRule(word);
   });
 
   return (

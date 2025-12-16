@@ -1,5 +1,3 @@
-import pluralize from 'pluralize';
-
 export const STOP_WORDS = new Set([
   'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'app',
   'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between',
@@ -19,11 +17,6 @@ export const STOP_WORDS = new Set([
   'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your',
   'yours', 'yourself', 'yourselves',
 ]);
-
-// Add all stop words as uncountable to prevent pluralization
-STOP_WORDS.forEach((word) => {
-  pluralize.addUncountableRule(word);
-});
 
 export const CATEGORIES = [
   'Books',
