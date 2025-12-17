@@ -1,42 +1,35 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CATEGORIES, GAME_CATEGORIES } from '@/constants';
 
 interface MetaFormProps {
+  metaKeywords: string;
   metaName: string;
   metaSubtitle: string;
-  metaKeywords: string;
-  selectedCategory: string;
-  selectedGameCategory: string;
-  onMetaNameChange: (value: string) => void;
-  onMetaSubtitleChange: (value: string) => void;
-  onMetaKeywordsChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onGameCategoryChange: (value: string) => void;
+  onMetaKeywordsChange: (value: string) => void;
+  onMetaNameChange: (value: string) => void;
+  onMetaSubtitleChange: (value: string) => void;
+  selectedCategory: string;
+  selectedGameCategory: string;
 }
 
 export function MetaForm({
+  metaKeywords,
   metaName,
   metaSubtitle,
-  metaKeywords,
-  selectedCategory,
-  selectedGameCategory,
-  onMetaNameChange,
-  onMetaSubtitleChange,
-  onMetaKeywordsChange,
   onCategoryChange,
   onGameCategoryChange,
+  onMetaKeywordsChange,
+  onMetaNameChange,
+  onMetaSubtitleChange,
+  selectedCategory,
+  selectedGameCategory,
 }: MetaFormProps) {
   return (
     <div className="flex flex-col gap-4">
-
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="metaTitle">Name</Label>
@@ -46,9 +39,9 @@ export function MetaForm({
         </div>
         <Input
           id="metaTitle"
-          value={metaName}
-          onChange={e => onMetaNameChange(e.target.value)}
           maxLength={30}
+          onChange={e => onMetaNameChange(e.target.value)}
+          value={metaName}
         />
       </div>
 
@@ -61,9 +54,9 @@ export function MetaForm({
         </div>
         <Input
           id="metaSubTitle"
-          value={metaSubtitle}
-          onChange={e => onMetaSubtitleChange(e.target.value)}
           maxLength={30}
+          onChange={e => onMetaSubtitleChange(e.target.value)}
+          value={metaSubtitle}
         />
       </div>
 

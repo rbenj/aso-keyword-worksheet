@@ -12,6 +12,10 @@
 - 🔥 Add good and bad demo sets
 - 🔥 Support multiple worksheets
 - 🔥 Replace Vite favicon
+- Add unit tests
+- Add E2E tests
+- Accessability audit
+- Tighten linting rules (rapidprotokit too)
 - Add dark mode toggle
 - Put red/green status dot next to App Meta
 - Add alert triangle icon to analysis section

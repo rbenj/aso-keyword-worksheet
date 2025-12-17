@@ -2,25 +2,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-interface SearchQueryFormProps {
-  searchQueryText: string;
-  searchQueryPopularity: string;
-  searchQueryCompetitiveness: string;
-  onSearchQueryTextChange: (value: string) => void;
-  onSearchQueryPopularityChange: (value: string) => void;
-  onSearchQueryCompetitivenessChange: (value: string) => void;
+interface QueryFormProps {
   onAdd: () => void;
+  onSearchQueryCompetitivenessChange: (value: string) => void;
+  onSearchQueryPopularityChange: (value: string) => void;
+  onSearchQueryTextChange: (value: string) => void;
+  searchQueryCompetitiveness: string;
+  searchQueryPopularity: string;
+  searchQueryText: string;
 }
 
-export function SearchQueryForm({
-  searchQueryText,
-  searchQueryPopularity,
-  searchQueryCompetitiveness,
-  onSearchQueryTextChange,
-  onSearchQueryPopularityChange,
-  onSearchQueryCompetitivenessChange,
+export function QueryForm({
   onAdd,
-}: SearchQueryFormProps) {
+  onSearchQueryCompetitivenessChange,
+  onSearchQueryPopularityChange,
+  onSearchQueryTextChange,
+  searchQueryCompetitiveness,
+  searchQueryPopularity,
+  searchQueryText,
+}: QueryFormProps) {
   return (
     <div className="space-y-2">
       <div className="flex-1 space-y-2">
@@ -37,10 +37,10 @@ export function SearchQueryForm({
           <Label htmlFor="addSearchQueryPopularity">Popularity</Label>
           <Input
             id="addSearchQueryPopularity"
-            type="number"
-            min="0"
             max="100"
+            min="0"
             onChange={e => onSearchQueryPopularityChange(e.target.value)}
+            type="number"
             value={searchQueryPopularity}
           />
         </div>
@@ -49,17 +49,15 @@ export function SearchQueryForm({
           <Label htmlFor="addSearchQueryCompetitiveness">Competitiveness</Label>
           <Input
             id="addSearchQueryCompetitiveness"
-            type="number"
-            min="0"
             max="100"
+            min="0"
             onChange={e => onSearchQueryCompetitivenessChange(e.target.value)}
+            type="number"
             value={searchQueryCompetitiveness}
           />
         </div>
 
-        <Button className="ml-auto" id="addSearchQueryButton" onClick={onAdd}>
-          Add
-        </Button>
+        <Button className="ml-auto" id="addSearchQueryButton" onClick={onAdd}>Add</Button>
       </div>
     </div>
   );

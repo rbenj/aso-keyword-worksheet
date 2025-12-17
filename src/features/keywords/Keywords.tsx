@@ -1,14 +1,14 @@
 import { Badges, type BadgeDef } from '@/components/Badges';
 
-interface KeywordsDisplayProps {
+interface KeywordsProps {
   keywords: string[];
   satisfiedKeywords: Set<string>;
 }
 
-export function KeywordsDisplay({
+export function Keywords({
   keywords,
   satisfiedKeywords,
-}: KeywordsDisplayProps) {
+}: KeywordsProps) {
   if (keywords.length <= 0) {
     return null;
   }

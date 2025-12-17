@@ -1,50 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
-import { useMediaQuery } from '@/hooks/use-media-query';
+
 import { cn } from '@/lib/utils';
 import type { SearchQuery } from '@/lib/db';
 
-interface EditSearchQueryDialogProps {
-  searchQuery: SearchQuery | null;
-  open: boolean;
+import { useMediaQuery } from '@/hooks/use-media-query';
+
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+interface QueryDialogProps {
   onOpenChange: (open: boolean) => void;
   onSave: (searchQuery: SearchQuery) => void;
+  open: boolean;
+  searchQuery: SearchQuery | null;
 }
 
-export function EditSearchQueryDialog({
-  searchQuery,
-  open,
+export function QueryDialog({
   onOpenChange,
   onSave,
-}: EditSearchQueryDialogProps) {
+  open,
+  searchQuery,
+}: QueryDialogProps) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [text, setText] = useState('');
   const [popularity, setPopularity] = useState('');
   const [competitiveness, setCompetitiveness] = useState('');
   const initializedSearchQueryId = useRef<number | null>(null);
 
-  // Only initialize form when dialog opens with a new/different search query
   useEffect(() => {
     if (open && searchQuery) {
-      // Only update if this is a different search query (different ID) or dialog just opened
       if (searchQuery.id !== initializedSearchQueryId.current) {
         setText(searchQuery.text);
         setPopularity(searchQuery.popularity?.toString() || '');
@@ -52,8 +39,8 @@ export function EditSearchQueryDialog({
         initializedSearchQueryId.current = searchQuery.id;
       }
     }
+
     if (!open) {
-      // Reset tracking when dialog closes
       initializedSearchQueryId.current = null;
     }
   }, [open, searchQuery?.id, searchQuery]);
@@ -61,18 +48,15 @@ export function EditSearchQueryDialog({
   const handleSave = () => {
     if (!searchQuery || !text.trim()) { return; }
 
-    // Normalize searchQuery: lowercase, trim, and remove extra whitespace
     const normalizedText = text
       .trim()
       .toLowerCase()
       .replace(/\s+/g, ' ');
 
-    // Parse popularity (0-100)
     const popularityValue = popularity.trim()
       ? Math.max(0, Math.min(100, parseInt(popularity.trim(), 10) || 0))
       : undefined;
 
-    // Parse competitiveness (0-100)
     const competitivenessValue = competitiveness.trim()
       ? Math.max(0, Math.min(100, parseInt(competitiveness.trim(), 10) || 0))
       : undefined;
@@ -83,6 +67,7 @@ export function EditSearchQueryDialog({
       popularity: popularityValue,
       competitiveness: competitivenessValue,
     });
+
     onOpenChange(false);
   };
 
@@ -91,7 +76,9 @@ export function EditSearchQueryDialog({
     handleSave();
   };
 
-  if (!searchQuery) { return null; }
+  if (!searchQuery) {
+    return null;
+  }
 
   const formContent = (
     <form
@@ -102,33 +89,33 @@ export function EditSearchQueryDialog({
         <Label htmlFor="edit-search-query-text">Search Query Text</Label>
         <Input
           id="edit-search-query-text"
-          value={text}
           onChange={e => setText(e.target.value)}
           placeholder="Search query text"
+          value={text}
         />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="edit-search-query-popularity">Popularity (0-100)</Label>
         <Input
           id="edit-search-query-popularity"
-          type="number"
-          min="0"
           max="100"
-          value={popularity}
+          min="0"
           onChange={e => setPopularity(e.target.value)}
           placeholder="Popularity (0-100)"
+          type="number"
+          value={popularity}
         />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="edit-search-query-competitiveness">Competitiveness (0-100)</Label>
         <Input
           id="edit-search-query-competitiveness"
-          type="number"
-          min="0"
           max="100"
-          value={competitiveness}
+          min="0"
           onChange={e => setCompetitiveness(e.target.value)}
           placeholder="Competitiveness (0-100)"
+          type="number"
+          value={competitiveness}
         />
       </div>
       <Button type="submit">Save changes</Button>

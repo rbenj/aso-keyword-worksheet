@@ -1,30 +1,31 @@
 import pluralize from 'pluralize';
 
+import { STOP_WORDS } from '@/constants';
+
 import { useAppState } from '@/hooks/use-app-state';
 import { useKeywordAnalysis } from '@/hooks/use-keyword-analysis';
-
-import { STOP_WORDS } from '@/constants';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
-import { Nav } from '@/components/Nav';
-import { Disclaimer } from '@/components/Disclaimer';
-import { MetaForm } from '@/components/aso/meta-form';
-import { SearchQueryForm } from '@/components/aso/search-query-form';
-import { SearchQueryList } from '@/components/aso/search-query-list';
-import { EditSearchQueryDialog } from '@/components/aso/edit-search-query-dialog';
-import { KeywordsDisplay } from '@/components/aso/keywords-display';
-import { MetaAnalysisComponent } from '@/components/aso/meta-analysis';
-import { RankChart } from '@/components/aso/rank-chart';
-import { UnusedQueries } from '@/components/aso/unused-queries';
 import { ActionBox } from '@/components/ActionBox';
+import { Disclaimer } from '@/components/Disclaimer';
 import { MockCard } from '@/components/MockCard';
+import { Nav } from '@/components/Nav';
+
+import { QueryDialog } from '@/features/queries/QueryDialog';
+import { QueryForm } from '@/features/queries/QueryForm';
+import { QueryList } from '@/features/queries/QueryList';
+import { MetaForm } from '@/features/meta/MetaForm';
+import { Keywords } from '@/features/keywords/Keywords';
+import { KeywordsStrength } from '@/features/keywords/KeywordsStrength';
+import { Issues } from '@/features/issues/Issues';
+import { AlternateQueries } from '@/features/queries/AlternateQueries';
 
 function App() {
   const {
     // State
-    searchQueries,
+    searchQueries: queries,
     searchQueryText,
     searchQueryPopularity,
     searchQueryCompetitiveness,
@@ -62,9 +63,9 @@ function App() {
     satisfiedKeywords,
     ownedKeywordsOrdered,
     metaAnalysis,
-    unusedSearchQueries,
+    unusedSearchQueries: alternateQueries,
   } = useKeywordAnalysis({
-    searchQueries,
+    searchQueries: queries,
     metaName,
     metaSubtitle,
     metaKeywords,
@@ -109,12 +110,13 @@ function App() {
               <CardTitle>Search Queries</CardTitle>
 
               <CardDescription>
-                Enter search queries you want to rank for. Arrange them by descending priority. Popularity and competitiveness fields map to values in Appfigures.
+                Enter search queries you want to rank for. Arrange them by descending priority.
+                Popularity and competitiveness fields map to values in Appfigures.
               </CardDescription>
             </CardHeader>
 
             <CardContent>
-              <SearchQueryForm
+              <QueryForm
                 onAdd={handleAddSearchQuery}
                 onSearchQueryCompetitivenessChange={setSearchQueryCompetitiveness}
                 onSearchQueryPopularityChange={setSearchQueryPopularity}
@@ -124,16 +126,16 @@ function App() {
                 searchQueryText={searchQueryText}
               />
 
-              {searchQueries.length > 0 && (
+              {queries.length > 0 && (
                 <Separator className="mt-4 mb-8" />
               )}
 
-              {searchQueries.length > 0 && (
-                <SearchQueryList
+              {queries.length > 0 && (
+                <QueryList
                   onDelete={handleDeleteSearchQuery}
                   onDragEnd={handleDragEnd}
                   onEdit={handleEditSearchQuery}
-                  searchQueries={searchQueries}
+                  searchQueries={queries}
                 />
               )}
             </CardContent>
@@ -144,7 +146,9 @@ function App() {
               <CardTitle>App Meta</CardTitle>
 
               <CardDescription>
-                These fields align with your app's information in App Store Connect. Keyword strength is determined by position. Strength decreases top-to-bottom and left-to-right.
+                These fields align with your app's information in App Store Connect. Keyword
+                strength is determined by position. Strength decreases top-to-bottom and
+                left-to-right.
               </CardDescription>
             </CardHeader>
 
@@ -171,14 +175,15 @@ function App() {
               <h2>Target Keywords</h2>
 
               <CardDescription>
-                These are the keywords that should be included in your app's meta. They are ordered to match the priority of your search queries. Only singular versions are listed (Apple does not differentiate between singular and plural words).
+                These are the keywords that should be included in your app meta. They are ordered
+                to match the priority of your search queries.
               </CardDescription>
             </CardHeader>
 
             <CardContent>
               {keywords.length > 0 ? (
                 <>
-                  <KeywordsDisplay
+                  <Keywords
                     keywords={keywords}
                     satisfiedKeywords={satisfiedKeywords}
                   />
@@ -187,7 +192,7 @@ function App() {
                     <>
                       <h3 className="mt-6">Keyword Strength</h3>
 
-                      <RankChart
+                      <KeywordsStrength
                         keywords={keywords}
                         ownedKeywordsOrdered={ownedKeywordsOrdered}
                       />
@@ -195,9 +200,7 @@ function App() {
                   )}
                 </>
               ) : (
-                <ActionBox>
-                  Add search queries to determine target keywords.
-                </ActionBox>
+                <ActionBox>Add search queries to determine target keywords.</ActionBox>
               )}
             </CardContent>
           </MockCard>
@@ -206,12 +209,11 @@ function App() {
             <CardHeader>
               <h2>Potential Issues</h2>
 
-              <CardDescription>
-                Investigate app meta optimization issues listed here.
-              </CardDescription>
+              <CardDescription>Is your app meta fully optimized?</CardDescription>
             </CardHeader>
+
             <CardContent>
-              <MetaAnalysisComponent
+              <Issues
                 keywordListValue={metaKeywords}
                 metaAnalysis={metaAnalysis}
               />
@@ -223,18 +225,21 @@ function App() {
               <h2>Alternate Search Queries</h2>
 
               <CardDescription>
-                A slight variation of a search query may have a very different popularity-to-competitiveness ratio. Check variations in word order and pluralization. Some possibilities are listed here.
+                A slight variation of a search query may have a very different popularity-to-competitiveness
+                ratio. Check variations in word order and pluralization. Here are some possibilities.
               </CardDescription>
             </CardHeader>
 
             <CardContent>
-              {searchQueries.length > 0 ? (
-                <UnusedQueries
-                  unusedSearchQueries={unusedSearchQueries}
-                />
+              {alternateQueries.length > 0 ? (
+                <AlternateQueries queries={alternateQueries} />
               ) : (
                 <ActionBox>
-                  Add search queries to see alternatives.
+                  {
+                    queries.length > 0
+                      ? 'No good suggestions at the moment.'
+                      : 'Add search queries to see alternatives.'
+                  }
                 </ActionBox>
               )}
             </CardContent>
@@ -242,7 +247,7 @@ function App() {
         </div>
       </div>
 
-      <EditSearchQueryDialog
+      <QueryDialog
         onOpenChange={setIsEditDialogOpen}
         onSave={handleSaveSearchQuery}
         open={isEditDialogOpen}

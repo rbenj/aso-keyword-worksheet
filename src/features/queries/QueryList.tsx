@@ -1,33 +1,21 @@
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { SearchQueryItem } from './search-query-item';
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { SearchQuery } from '@/lib/db';
+import { QueryItem } from './QueryItem';
 
-interface SearchQueryListProps {
-  searchQueries: SearchQuery[];
-  onEdit: (searchQuery: SearchQuery) => void;
+interface QueryListProps {
   onDelete: (searchQueryId: number) => void;
   onDragEnd: (event: DragEndEvent) => void;
+  onEdit: (searchQuery: SearchQuery) => void;
+  searchQueries: SearchQuery[];
 }
 
-export function SearchQueryList({
-  searchQueries,
-  onEdit,
+export function QueryList({
   onDelete,
   onDragEnd,
-}: SearchQueryListProps) {
+  onEdit,
+  searchQueries,
+}: QueryListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -36,7 +24,7 @@ export function SearchQueryList({
   );
 
   return (
-    <div className="mt-4 space-y-2">
+    <div className="space-y-2 mt-4">
       <DndContext
         collisionDetection={closestCenter}
         onDragEnd={onDragEnd}
@@ -47,11 +35,11 @@ export function SearchQueryList({
           strategy={verticalListSortingStrategy}
         >
           {searchQueries.map(searchQuery => (
-            <SearchQueryItem
+            <QueryItem
               key={searchQuery.id}
-              searchQuery={searchQuery}
-              onEdit={() => onEdit(searchQuery)}
               onDelete={() => onDelete(searchQuery.id)}
+              onEdit={() => onEdit(searchQuery)}
+              searchQuery={searchQuery}
             />
           ))}
         </SortableContext>
