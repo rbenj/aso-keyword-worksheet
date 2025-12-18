@@ -1,9 +1,17 @@
-import pluralize from 'pluralize';
+import { useState, useMemo } from 'react';
 
-import { STOP_WORDS } from '@/constants';
+import { Keyword } from '@/models/Keyword';
+import { Meta } from '@/models/Meta';
+import { Query } from '@/models/Query';
 
-import { useAppState } from '@/hooks/use-app-state';
-import { useKeywordAnalysis } from '@/hooks/use-keyword-analysis';
+import { cn } from '@/lib/utils';
+
+import { applyDemoData } from '@/services/demo';
+import { extractKeywords } from '@/services/aso';
+
+import { useDb } from '@/hooks/useDb';
+import { useIssues } from '@/hooks/useIssues';
+import { useQueries } from '@/hooks/useQueries';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -13,79 +21,97 @@ import { Disclaimer } from '@/components/Disclaimer';
 import { MockCard } from '@/components/MockCard';
 import { Nav } from '@/components/Nav';
 
+import { AlternateQueries } from '@/features/queries/AlternateQueries';
+import { Issues } from '@/features/issues/Issues';
+import { MetaForm } from '@/features/meta/MetaForm';
 import { QueryDialog } from '@/features/queries/QueryDialog';
 import { QueryForm } from '@/features/queries/QueryForm';
 import { QueryList } from '@/features/queries/QueryList';
-import { MetaForm } from '@/features/meta/MetaForm';
-import { Keywords } from '@/features/keywords/Keywords';
-import { KeywordsStrength } from '@/features/keywords/KeywordsStrength';
-import { Issues } from '@/features/issues/Issues';
-import { AlternateQueries } from '@/features/queries/AlternateQueries';
+import { TargetKeywords } from '@/features/target-keywords/TargetKeywords';
+import { TargetKeywordsChart } from '@/features/target-keywords/TargetKeywordsChart';
+
 
 function App() {
-  const {
-    // State
-    searchQueries: queries,
-    searchQueryText,
-    searchQueryPopularity,
-    searchQueryCompetitiveness,
-    selectedCategory,
-    selectedGameCategory,
-    metaName,
-    metaSubtitle,
-    metaKeywords,
-    editingSearchQuery,
-    isEditDialogOpen,
+  const [activeQuery, setActiveQuery] = useState<Query | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [meta, setMeta] = useState<Meta>(new Meta({}));
+  const [queries, setQueries] = useState<Query[]>([]);
 
-    // Setters
-    setSearchQueryText,
-    setSearchQueryPopularity,
-    setSearchQueryCompetitiveness,
-    setSelectedGameCategory,
-    setMetaName,
-    setMetaSubtitle,
-    setMetaKeywords,
-    setIsEditDialogOpen,
-
-    // Handlers
-    handleAddSearchQuery,
-    handleDragEnd,
-    handleCategoryChange,
-    handleEditSearchQuery,
-    handleSaveSearchQuery,
-    handleDeleteSearchQuery,
-    handleReset,
-    handleUseDemoData,
-  } = useAppState();
-
-  const {
-    keywords,
-    satisfiedKeywords,
-    ownedKeywordsOrdered,
-    metaAnalysis,
-    unusedSearchQueries: alternateQueries,
-  } = useKeywordAnalysis({
-    searchQueries: queries,
-    metaName,
-    metaSubtitle,
-    metaKeywords,
-    selectedCategory,
-    selectedGameCategory,
+  // Load and save from db
+  useDb({
+    meta,
+    queries,
+    setMeta,
+    setQueries,
+    setIsLoading,
   });
 
-  // Prevent pluralization of stop words, keep in mind this could affect other use cases for pluralize
-  STOP_WORDS.forEach((word) => {
-    pluralize.addUncountableRule(word);
-  });
+  // Extract keywords from meta
+  const metaKeywords: Keyword[] = useMemo(() => {
+    return extractKeywords(meta.getAllTextOrdered());
+  }, [meta]);
+
+  // Extract target keywords and alternates from queries
+  const {
+    alternateQueries,
+    targetKeywords,
+  } = useQueries(queries);
+
+  // Determinepotential issues with meta
+  const {
+    duplicateMetaKeywords,
+    keywordFieldCapitalWords,
+    keywordFieldInvalidWords,
+    keywordFieldMultiWords,
+    keywordFieldPluralWords,
+    keywordFieldSpaceCount,
+    stopMetaKeywords,
+    unhitTargetedKeywords,
+  } = useIssues(targetKeywords, metaKeywords, meta.keywords);
+
+  // Handlers
+  const handleResetData = () => {
+    setQueries([]);
+    setMeta(new Meta({}));
+  };
+
+  const handleLoadDemoData = () => {
+    applyDemoData(setMeta, setQueries);
+  };
+
+  const handleAddQuery = (query: Query): void => {
+    setQueries([...queries, query]);
+  };
+
+  const handleClickEditQuery = (query: Query): void => {
+    setActiveQuery(query);
+  };
+
+  const handleUpdateQuery = (query: Query): void => {
+    setQueries([...queries.map(p => query.id === p.id ? query : p)]);
+    setActiveQuery(null);
+  };
+
+  const handleClickDeleteQuery = (query: Query): void => {
+    setQueries([...queries.filter(p => p.id !== query.id)]);
+  };
+
+  const handReorderQueries = (queries: Query[]): void => {
+    setQueries([...queries]);
+  };
+
+  const handleUpdateMeta = (meta: Meta): void => {
+    setMeta(meta);
+  };
 
   return (
-    <div className="w-full min-h-screen bg-background pb-16">
+    <div className={cn('w-full min-h-screen bg-background pb-16', isLoading && 'animate-pulse')}>
       <header className="w-full flex flex-col">
         <Disclaimer />
 
         <Nav
-          onReset={handleReset}
-          onUseDemoData={handleUseDemoData}
+          onReset={handleResetData}
+          onUseDemoData={handleLoadDemoData}
         />
 
         <div className="px-8 pt-16 pb-6 border-b">
@@ -117,13 +143,8 @@ function App() {
 
             <CardContent>
               <QueryForm
-                onAdd={handleAddSearchQuery}
-                onSearchQueryCompetitivenessChange={setSearchQueryCompetitiveness}
-                onSearchQueryPopularityChange={setSearchQueryPopularity}
-                onSearchQueryTextChange={setSearchQueryText}
-                searchQueryCompetitiveness={searchQueryCompetitiveness}
-                searchQueryPopularity={searchQueryPopularity}
-                searchQueryText={searchQueryText}
+                onSubmit={handleAddQuery}
+                submitLabel="Add"
               />
 
               {queries.length > 0 && (
@@ -132,10 +153,10 @@ function App() {
 
               {queries.length > 0 && (
                 <QueryList
-                  onDelete={handleDeleteSearchQuery}
-                  onDragEnd={handleDragEnd}
-                  onEdit={handleEditSearchQuery}
-                  searchQueries={queries}
+                  onClickDelete={handleClickDeleteQuery}
+                  onClickEdit={handleClickEditQuery}
+                  onReorder={handReorderQueries}
+                  queries={queries}
                 />
               )}
             </CardContent>
@@ -154,16 +175,8 @@ function App() {
 
             <CardContent>
               <MetaForm
-                metaKeywords={metaKeywords}
-                metaName={metaName}
-                metaSubtitle={metaSubtitle}
-                onCategoryChange={handleCategoryChange}
-                onGameCategoryChange={setSelectedGameCategory}
-                onMetaKeywordsChange={setMetaKeywords}
-                onMetaNameChange={setMetaName}
-                onMetaSubtitleChange={setMetaSubtitle}
-                selectedCategory={selectedCategory}
-                selectedGameCategory={selectedGameCategory}
+                meta={meta}
+                onUpdate={handleUpdateMeta}
               />
             </CardContent>
           </Card>
@@ -181,23 +194,19 @@ function App() {
             </CardHeader>
 
             <CardContent>
-              {keywords.length > 0 ? (
+              {targetKeywords.length > 0 ? (
                 <>
-                  <Keywords
-                    keywords={keywords}
-                    satisfiedKeywords={satisfiedKeywords}
+                  <TargetKeywords
+                    targetKeywords={targetKeywords}
+                    metaKeywords={metaKeywords}
                   />
 
-                  {satisfiedKeywords.size > 0 && (
-                    <>
-                      <h3 className="mt-6">Keyword Strength</h3>
+                  <h3 className="mt-6">Keyword Strength</h3>
 
-                      <KeywordsStrength
-                        keywords={keywords}
-                        ownedKeywordsOrdered={ownedKeywordsOrdered}
-                      />
-                    </>
-                  )}
+                  <TargetKeywordsChart
+                    targetKeywords={targetKeywords}
+                    metaKeywords={metaKeywords}
+                  />
                 </>
               ) : (
                 <ActionBox>Add search queries to determine target keywords.</ActionBox>
@@ -214,8 +223,14 @@ function App() {
 
             <CardContent>
               <Issues
-                keywordListValue={metaKeywords}
-                metaAnalysis={metaAnalysis}
+                duplicateMetaKeywords={duplicateMetaKeywords}
+                keywordFieldCapitalWords={keywordFieldCapitalWords}
+                keywordFieldInvalidWords={keywordFieldInvalidWords}
+                keywordFieldMultiWords={keywordFieldMultiWords}
+                keywordFieldPluralWords={keywordFieldPluralWords}
+                keywordFieldSpaceCount={keywordFieldSpaceCount}
+                stopMetaKeywords={stopMetaKeywords}
+                unhitTargetedKeywords={unhitTargetedKeywords}
               />
             </CardContent>
           </MockCard>
@@ -232,7 +247,9 @@ function App() {
 
             <CardContent>
               {alternateQueries.length > 0 ? (
-                <AlternateQueries queries={alternateQueries} />
+                <AlternateQueries
+                  queries={alternateQueries}
+                />
               ) : (
                 <ActionBox>
                   {
@@ -248,10 +265,9 @@ function App() {
       </div>
 
       <QueryDialog
-        onOpenChange={setIsEditDialogOpen}
-        onSave={handleSaveSearchQuery}
-        open={isEditDialogOpen}
-        searchQuery={editingSearchQuery}
+        query={activeQuery}
+        onUpdate={handleUpdateQuery}
+        onClose={() => setActiveQuery(null)}
       />
     </div >
   );

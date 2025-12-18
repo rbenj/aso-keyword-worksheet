@@ -1,20 +1,20 @@
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { SearchQuery } from '@/lib/db';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { Query } from '@/models/Query';
 import { QueryItem } from './QueryItem';
 
 interface QueryListProps {
-  onDelete: (searchQueryId: number) => void;
-  onDragEnd: (event: DragEndEvent) => void;
-  onEdit: (searchQuery: SearchQuery) => void;
-  searchQueries: SearchQuery[];
+  onClickDelete: (query: Query) => void;
+  onClickEdit: (query: Query) => void;
+  onReorder: (queries: Query[]) => void;
+  queries: Query[];
 }
 
 export function QueryList({
-  onDelete,
-  onDragEnd,
-  onEdit,
-  searchQueries,
+  onClickDelete,
+  onClickEdit,
+  onReorder,
+  queries,
 }: QueryListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -23,23 +23,32 @@ export function QueryList({
     }),
   );
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = queries.findIndex(q => q.id === active.id);
+      const newIndex = queries.findIndex(q => q.id === over.id);
+      onReorder(arrayMove(queries, oldIndex, newIndex));
+    }
+  };
+
   return (
     <div className="space-y-2 mt-4">
       <DndContext
         collisionDetection={closestCenter}
-        onDragEnd={onDragEnd}
+        onDragEnd={handleDragEnd}
         sensors={sensors}
       >
         <SortableContext
-          items={searchQueries.map(p => p.id)}
+          items={queries.map(p => p.id)}
           strategy={verticalListSortingStrategy}
         >
-          {searchQueries.map(searchQuery => (
+          {queries.map(query => (
             <QueryItem
-              key={searchQuery.id}
-              onDelete={() => onDelete(searchQuery.id)}
-              onEdit={() => onEdit(searchQuery)}
-              searchQuery={searchQuery}
+              key={query.id}
+              onClickDelete={() => onClickDelete(query)}
+              onClickEdit={() => onClickEdit(query)}
+              query={query}
             />
           ))}
         </SortableContext>

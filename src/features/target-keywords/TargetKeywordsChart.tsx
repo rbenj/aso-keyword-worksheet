@@ -1,32 +1,40 @@
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import type { Keyword } from '@/models/Keyword';
 import { ChartContainer, ChartLegendContent, ChartLegend, type ChartConfig } from '@/components/ui/chart';
 
 const truncate = (value: string, max: number) => {
   return value.length > max ? `${value.slice(0, max - 3)}…` : value;
 };
 
-interface KeywordsStrengthProps {
-  keywords: string[];
-  ownedKeywordsOrdered: string[];
+interface TargetKeywordsChartProps {
+  targetKeywords: Keyword[];
+  metaKeywords: Keyword[];
 }
 
-export function KeywordsStrength({
-  keywords,
-  ownedKeywordsOrdered,
-}: KeywordsStrengthProps) {
-  if (keywords.length === 0) {
+export function TargetKeywordsChart({
+  targetKeywords,
+  metaKeywords,
+}: TargetKeywordsChartProps) {
+  if (targetKeywords.length === 0) {
     return null;
   }
 
-  const chartData = keywords.map((keyword, i) => {
-    const filteredOwnedKeywords = ownedKeywordsOrdered.filter(k => keywords.includes(k));
-    const actual = filteredOwnedKeywords.indexOf(keyword) !== -1 ? keywords.length - filteredOwnedKeywords.indexOf(keyword) : 0;
-    const expected = keywords.length - i;
+  const chartData = targetKeywords.map((targetKeyword, i) => {
+    const filteredMetaKeywords = metaKeywords.filter(metaKeyword =>
+      targetKeywords.some(targetKeyword2 => targetKeyword2.text === metaKeyword.text),
+    );
+    const indexInFilteredMetaKeywords = filteredMetaKeywords.findIndex(
+      metaKeyword => metaKeyword.text === targetKeyword.text,
+    );
+    const actual = indexInFilteredMetaKeywords >= 0
+      ? targetKeywords.length - indexInFilteredMetaKeywords
+      : 0;
+    const expected = targetKeywords.length - i;
 
     return {
       actual: actual,
       expected: Math.max(0, expected - actual),
-      keyword: keyword,
+      keyword: targetKeyword.text,
     };
   });
 

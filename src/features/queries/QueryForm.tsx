@@ -1,63 +1,121 @@
+import { useId, useState } from 'react';
+import { Query } from '@/models/Query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface QueryFormProps {
-  onAdd: () => void;
-  onSearchQueryCompetitivenessChange: (value: string) => void;
-  onSearchQueryPopularityChange: (value: string) => void;
-  onSearchQueryTextChange: (value: string) => void;
-  searchQueryCompetitiveness: string;
-  searchQueryPopularity: string;
-  searchQueryText: string;
+  competitiveness?: number;
+  id?: string;
+  onSubmit: (query: Query) => void;
+  popularity?: number;
+  submitLabel: string;
+  text?: string;
 }
 
 export function QueryForm({
-  onAdd,
-  onSearchQueryCompetitivenessChange,
-  onSearchQueryPopularityChange,
-  onSearchQueryTextChange,
-  searchQueryCompetitiveness,
-  searchQueryPopularity,
-  searchQueryText,
+  competitiveness,
+  id,
+  onSubmit,
+  popularity,
+  submitLabel,
+  text = '',
 }: QueryFormProps) {
+  const [queryText, setQueryText] = useState(text);
+  const [queryPopularity, setQueryPopularity] = useState(popularity);
+  const [queryCompetitiveness, setQueryCompetitiveness] = useState(competitiveness);
+
+  const elId = useId();
+  const textFieldId = `${elId}-text`;
+  const popularityFieldId = `${elId}-popularity`;
+  const competitivenessFieldId = `${elId}-competitiveness`;
+
+  const onChangeText = (value: string) => {
+    setQueryText(value);
+  };
+
+  const onChangePopularity = (value: string) => {
+    setQueryPopularity(Math.max(0, Math.min(100, parseInt(value, 10) || 0)));
+  };
+
+  const onChangeCompetitiveness = (value: string) => {
+    setQueryCompetitiveness(Math.max(0, Math.min(100, parseInt(value, 10) || 0)));
+  };
+
+  const handleSubmit = () => {
+    if (queryText.trim()) {
+      const normalizedText = queryText
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+
+      const popularity = queryPopularity ?? undefined;
+      const competitiveness = queryCompetitiveness ?? undefined;
+
+      onSubmit(new Query({
+        id,
+        text: normalizedText,
+        popularity,
+        competitiveness,
+      }));
+
+      setQueryText('');
+      setQueryPopularity(undefined);
+      setQueryCompetitiveness(undefined);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex-1 space-y-2">
-        <Label htmlFor="addSearchQueryText">Search Query</Label>
+        <Label htmlFor={textFieldId}>
+          Search Query
+        </Label>
         <Input
-          id="addSearchQueryText"
-          onChange={e => onSearchQueryTextChange(e.target.value)}
-          value={searchQueryText}
+          id={textFieldId}
+          onChange={event => onChangeText(event.target.value)}
+          value={queryText}
         />
       </div>
 
       <div className="flex gap-2 items-end">
         <div className="flex-1 max-w-35 space-y-2">
-          <Label htmlFor="addSearchQueryPopularity">Popularity</Label>
+          <Label htmlFor={popularityFieldId}>
+            Popularity
+          </Label>
           <Input
-            id="addSearchQueryPopularity"
+            className="w-20"
+            id={popularityFieldId}
             max="100"
             min="0"
-            onChange={e => onSearchQueryPopularityChange(e.target.value)}
+            onChange={event => onChangePopularity(event.target.value)}
             type="number"
-            value={searchQueryPopularity}
+            value={queryPopularity ?? ''}
           />
         </div>
 
         <div className="flex-1 max-w-35 space-y-2">
-          <Label htmlFor="addSearchQueryCompetitiveness">Competitiveness</Label>
+          <Label htmlFor={competitivenessFieldId}>
+            Competitiveness
+          </Label>
           <Input
-            id="addSearchQueryCompetitiveness"
+            className="w-20"
+            id={competitivenessFieldId}
             max="100"
             min="0"
-            onChange={e => onSearchQueryCompetitivenessChange(e.target.value)}
+            onChange={event => onChangeCompetitiveness(event.target.value)}
             type="number"
-            value={searchQueryCompetitiveness}
+            value={queryCompetitiveness ?? ''}
           />
         </div>
 
-        <Button className="ml-auto" id="addSearchQueryButton" onClick={onAdd}>Add</Button>
+        <Button
+          className="ml-auto"
+          disabled={!queryText.trim()}
+          onClick={handleSubmit}
+        >
+          {submitLabel}
+        </Button>
       </div>
     </div>
   );

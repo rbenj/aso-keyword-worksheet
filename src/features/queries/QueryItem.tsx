@@ -1,19 +1,19 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Star, Shield, ExternalLink, Pencil, Trash2 } from 'lucide-react';
-import type { SearchQuery } from '@/lib/db';
+import { Query } from '@/models/Query';
 import { provider } from '@/aso-providers';
 
 interface QueryItemProps {
-  onDelete: () => void;
-  onEdit: () => void;
-  searchQuery: SearchQuery;
+  onClickDelete: () => void;
+  onClickEdit: () => void;
+  query: Query;
 }
 
 export function QueryItem({
-  onDelete,
-  onEdit,
-  searchQuery,
+  onClickDelete,
+  onClickEdit,
+  query,
 }: QueryItemProps) {
   const {
     attributes,
@@ -22,7 +22,7 @@ export function QueryItem({
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: searchQuery.id });
+  } = useSortable({ id: query.id });
 
   const style = {
     opacity: isDragging ? 0.5 : 1,
@@ -45,21 +45,21 @@ export function QueryItem({
           <GripVertical className="h-4 w-4" />
         </button>
 
-        <div className="font-medium">{searchQuery.text}</div>
+        <div className="font-medium">{query.text}</div>
       </div>
 
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
-        {searchQuery.popularity !== undefined && (
+        {query.popularity !== undefined && (
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4" />
-            <span>{searchQuery.popularity}</span>
+            <span>{query.popularity}</span>
           </div>
         )}
 
-        {searchQuery.competitiveness !== undefined && (
+        {query.competitiveness !== undefined && (
           <div className="flex items-center gap-1">
             <Shield className="w-4 h-4" />
-            <span>{searchQuery.competitiveness}</span>
+            <span>{query.competitiveness}</span>
           </div>
         )}
 
@@ -67,7 +67,7 @@ export function QueryItem({
           className="text-muted-foreground hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
-            onEdit();
+            onClickEdit();
           }}
         >
           <Pencil className="h-4 w-4" />
@@ -77,7 +77,7 @@ export function QueryItem({
           className="text-muted-foreground hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            onClickDelete();
           }}
         >
           <Trash2 className="h-4 w-4" />
@@ -85,7 +85,7 @@ export function QueryItem({
 
         <a
           className="text-muted-foreground hover:text-foreground"
-          href={provider.getQueryURL(searchQuery.text)}
+          href={provider.getQueryURL(query.text)}
           onClick={e => e.stopPropagation()}
           rel="noopener noreferrer"
           target="_blank"
