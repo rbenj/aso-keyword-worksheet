@@ -31,20 +31,20 @@ export class Meta {
   readonly categoryGame: CategoryGame | '';
 
   constructor(input: MetaInput = {}) {
-    const name = input.name?.trim() ?? '';
-    if (name.length > NAME_MAX_LENGTH) {
+    const name = input.name ?? '';
+    if (name.trim().length > NAME_MAX_LENGTH) {
       throw new Error(`Name cannot exceed ${NAME_MAX_LENGTH} characters.`);
     }
     this.name = name;
 
-    const subtitle = input.subtitle?.trim() ?? '';
-    if (subtitle.length > SUBTITLE_MAX_LENGTH) {
+    const subtitle = input.subtitle ?? '';
+    if (subtitle.trim().length > SUBTITLE_MAX_LENGTH) {
       throw new Error(`Subtitle cannot exceed ${SUBTITLE_MAX_LENGTH} characters.`);
     }
     this.subtitle = subtitle;
 
-    const keywords = input.keywords?.trim() ?? '';
-    if (keywords.length > KEYWORDS_MAX_LENGTH) {
+    const keywords = input.keywords ?? '';
+    if (keywords.trim().length > KEYWORDS_MAX_LENGTH) {
       throw new Error(`Keywords cannot exceed ${KEYWORDS_MAX_LENGTH} characters.`);
     }
     this.keywords = keywords;
